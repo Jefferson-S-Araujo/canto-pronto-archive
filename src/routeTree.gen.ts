@@ -13,6 +13,7 @@ import { Route as QrRouteImport } from './routes/qr'
 import { Route as ProprietarioRouteImport } from './routes/proprietario'
 import { Route as InquilinoRouteImport } from './routes/inquilino'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as CriarContaRouteImport } from './routes/criar-conta'
 import { Route as CadastrarRouteImport } from './routes/cadastrar'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -21,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ImovelIdRouteImport } from './routes/imovel.$id'
 import { Route as ContratoIdRouteImport } from './routes/contrato.$id'
 import { Route as ApiPublicSeedDemoAdminRouteImport } from './routes/api/public/seed-demo-admin'
+import { Route as ApiPublicAuthSignupRouteImport } from './routes/api/public/auth/signup'
 
 const QrRoute = QrRouteImport.update({
   id: '/qr',
@@ -40,6 +42,11 @@ const InquilinoRoute = InquilinoRouteImport.update({
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriarContaRoute = CriarContaRouteImport.update({
+  id: '/criar-conta',
+  path: '/criar-conta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CadastrarRoute = CadastrarRouteImport.update({
@@ -82,6 +89,11 @@ const ApiPublicSeedDemoAdminRoute = ApiPublicSeedDemoAdminRouteImport.update({
   path: '/api/public/seed-demo-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAuthSignupRoute = ApiPublicAuthSignupRouteImport.update({
+  id: '/api/public/auth/signup',
+  path: '/api/public/auth/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/buscar': typeof BuscarRoute
   '/cadastrar': typeof CadastrarRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
   '/inquilino': typeof InquilinoRoute
   '/proprietario': typeof ProprietarioRoute
@@ -96,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/contrato/$id': typeof ContratoIdRoute
   '/imovel/$id': typeof ImovelIdRoute
   '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
+  '/api/public/auth/signup': typeof ApiPublicAuthSignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,6 +117,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/buscar': typeof BuscarRoute
   '/cadastrar': typeof CadastrarRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
   '/inquilino': typeof InquilinoRoute
   '/proprietario': typeof ProprietarioRoute
@@ -110,6 +125,7 @@ export interface FileRoutesByTo {
   '/contrato/$id': typeof ContratoIdRoute
   '/imovel/$id': typeof ImovelIdRoute
   '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
+  '/api/public/auth/signup': typeof ApiPublicAuthSignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,6 +134,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/buscar': typeof BuscarRoute
   '/cadastrar': typeof CadastrarRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
   '/inquilino': typeof InquilinoRoute
   '/proprietario': typeof ProprietarioRoute
@@ -125,6 +142,7 @@ export interface FileRoutesById {
   '/contrato/$id': typeof ContratoIdRoute
   '/imovel/$id': typeof ImovelIdRoute
   '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
+  '/api/public/auth/signup': typeof ApiPublicAuthSignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -134,6 +152,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/buscar'
     | '/cadastrar'
+    | '/criar-conta'
     | '/entrar'
     | '/inquilino'
     | '/proprietario'
@@ -141,6 +160,7 @@ export interface FileRouteTypes {
     | '/contrato/$id'
     | '/imovel/$id'
     | '/api/public/seed-demo-admin'
+    | '/api/public/auth/signup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -148,6 +168,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/buscar'
     | '/cadastrar'
+    | '/criar-conta'
     | '/entrar'
     | '/inquilino'
     | '/proprietario'
@@ -155,6 +176,7 @@ export interface FileRouteTypes {
     | '/contrato/$id'
     | '/imovel/$id'
     | '/api/public/seed-demo-admin'
+    | '/api/public/auth/signup'
   id:
     | '__root__'
     | '/'
@@ -162,6 +184,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/buscar'
     | '/cadastrar'
+    | '/criar-conta'
     | '/entrar'
     | '/inquilino'
     | '/proprietario'
@@ -169,6 +192,7 @@ export interface FileRouteTypes {
     | '/contrato/$id'
     | '/imovel/$id'
     | '/api/public/seed-demo-admin'
+    | '/api/public/auth/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -177,6 +201,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   BuscarRoute: typeof BuscarRoute
   CadastrarRoute: typeof CadastrarRoute
+  CriarContaRoute: typeof CriarContaRoute
   EntrarRoute: typeof EntrarRoute
   InquilinoRoute: typeof InquilinoRoute
   ProprietarioRoute: typeof ProprietarioRoute
@@ -184,6 +209,7 @@ export interface RootRouteChildren {
   ContratoIdRoute: typeof ContratoIdRoute
   ImovelIdRoute: typeof ImovelIdRoute
   ApiPublicSeedDemoAdminRoute: typeof ApiPublicSeedDemoAdminRoute
+  ApiPublicAuthSignupRoute: typeof ApiPublicAuthSignupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -214,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/entrar'
       fullPath: '/entrar'
       preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criar-conta': {
+      id: '/criar-conta'
+      path: '/criar-conta'
+      fullPath: '/criar-conta'
+      preLoaderRoute: typeof CriarContaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadastrar': {
@@ -272,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSeedDemoAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth/signup': {
+      id: '/api/public/auth/signup'
+      path: '/api/public/auth/signup'
+      fullPath: '/api/public/auth/signup'
+      preLoaderRoute: typeof ApiPublicAuthSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -281,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   BuscarRoute: BuscarRoute,
   CadastrarRoute: CadastrarRoute,
+  CriarContaRoute: CriarContaRoute,
   EntrarRoute: EntrarRoute,
   InquilinoRoute: InquilinoRoute,
   ProprietarioRoute: ProprietarioRoute,
@@ -288,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContratoIdRoute: ContratoIdRoute,
   ImovelIdRoute: ImovelIdRoute,
   ApiPublicSeedDemoAdminRoute: ApiPublicSeedDemoAdminRoute,
+  ApiPublicAuthSignupRoute: ApiPublicAuthSignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
