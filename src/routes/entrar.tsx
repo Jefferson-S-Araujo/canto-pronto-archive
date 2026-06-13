@@ -57,14 +57,9 @@ function Entrar() {
   const [loading, setLoading] = useState(false);
   const [seedMsg, setSeedMsg] = useState<string>("");
 
-  // Provision demo admin (admin@cantopronto.com / admin123) on first visit. Idempotent.
+  // Demo info only — no backend call in mock mode
   useEffect(() => {
-    fetch("/api/public/seed-demo-admin", { method: "POST" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.ok) setSeedMsg("Admin demo pronto: admin@cantopronto.com / admin123");
-      })
-      .catch(() => {});
+    setSeedMsg("Use o cadastro para simular login (mock).");
   }, []);
 
   const routeForRoles = (roles: string[]) =>
