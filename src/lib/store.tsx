@@ -23,11 +23,14 @@ export type Property = {
 export type User = {
   id: string;
   name: string;
+  email?: string;
   role: "tenant" | "owner" | "admin";
+  isAuthenticated: boolean;
   docStatus: "none" | "pending" | "approved" | "rejected";
   creditScore: number | null; // null = não enviou
   creditApproved: boolean;
 };
+
 
 export type ProposalPropertySnapshot = {
   title: string;
