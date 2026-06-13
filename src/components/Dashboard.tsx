@@ -55,6 +55,9 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
   const items: { key: Section; label: string; icon: typeof Wallet }[] = [
     { key: "financeiro", label: "Financeiro", icon: Wallet },
     { key: "contratos", label: "Contratos Atuais", icon: FileText },
+    ...(role === "owner"
+      ? [{ key: "imoveis" as Section, label: "Meus Imóveis", icon: Home }]
+      : []),
     { key: "perfil", label: "Meu Perfil", icon: UserCircle },
   ];
 
