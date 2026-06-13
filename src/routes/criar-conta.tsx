@@ -22,7 +22,9 @@ export const Route = createFileRoute("/criar-conta")({
 
 function CriarConta() {
   const navigate = useNavigate();
+  const { login } = useStore();
   const { step = 1, userType: queryUserType } = Route.useSearch();
+
   const [userType, setUserType] = useState<"tenant" | "owner" | null>(
     queryUserType || null
   );
