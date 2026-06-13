@@ -1,22 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listPublishedProperties } from "@/lib/properties.api";
 import { PropertyCard } from "@/components/PropertyCard";
-import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
 
 export const Route = createFileRoute("/buscar")({
   head: () => ({ meta: [{ title: "Buscar imóveis em Salvador — Canto Pronto" }] }),
   component: Buscar,
 });
 
-const NEIGHBORHOODS = ["Todos", "Barra", "Rio Vermelho", "Imbuí", "Brotas"];
+const NEIGHBORHOODS = ["Todos", ...SALVADOR_NEIGHBORHOODS];
 
 function Buscar() {
-  const { data: properties = [], isLoading } = useQuery({
-    queryKey: ["properties", "published"],
-    queryFn: listPublishedProperties,
-  });
+  const { properties } = useStore();
+  const isLoading = false;
   const [q, setQ] = useState("");
   const [bairro, setBairro] = useState("Todos");
   const [maxPrice, setMaxPrice] = useState(5000);
@@ -109,11 +107,6 @@ function Buscar() {
       <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((p) => <PropertyCard key={p.id} p={p} />)}
       </div>
-      {isLoading && (
-        <div className="mt-10 flex items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando imóveis...
-        </div>
-      )}
       {!isLoading && list.length === 0 && (
         <div className="mt-10 rounded-xl border bg-card p-10 text-center text-muted-foreground">
           Nenhum imóvel publicado ainda. Proprietários: cadastre seu imóvel no dashboard.

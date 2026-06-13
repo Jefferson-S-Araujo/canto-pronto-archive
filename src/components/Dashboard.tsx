@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
+import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
 import {
   Wallet,
   FileText,
@@ -10,9 +11,11 @@ import {
   Clock,
   Camera,
   KeyRound,
+  Home,
+  PlusCircle,
 } from "lucide-react";
 
-type Section = "financeiro" | "contratos" | "perfil";
+type Section = "financeiro" | "contratos" | "perfil" | "imoveis";
 
 type Invoice = {
   id: string;
@@ -52,6 +55,9 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
   const items: { key: Section; label: string; icon: typeof Wallet }[] = [
     { key: "financeiro", label: "Financeiro", icon: Wallet },
     { key: "contratos", label: "Contratos Atuais", icon: FileText },
+    ...(role === "owner"
+      ? [{ key: "imoveis" as Section, label: "Meus Imóveis", icon: Home }]
+      : []),
     { key: "perfil", label: "Meu Perfil", icon: UserCircle },
   ];
 
@@ -88,10 +94,130 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
         <section>
           {section === "financeiro" && <Financeiro role={role} />}
           {section === "contratos" && <Contratos role={role} />}
+          {section === "imoveis" && role === "owner" && <MeusImoveis />}
           {section === "perfil" && <Perfil />}
         </section>
       </div>
     </main>
+  );
+}
+
+function MeusImoveis() {
+  const { properties, user, addProperty } = useStore();
+  const mine = properties.filter((p) => p.ownerId === user.id);
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [neighborhood, setNeighborhood] = useState<string>(SALVADOR_NEIGHBORHOODS[0]);
+  const [bedrooms, setBedrooms] = useState("2");
+  const [bathrooms, setBathrooms] = useState("1");
+  const [area, setArea] = useState("50");
+  const [image, setImage] = useState("");
+  const [description, setDescription] = useState("");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const priceN = Number(price);
+    if (!title.trim() || !priceN || !neighborhood) {
+      return alert("Preencha título, valor e bairro.");
+    }
+    addProperty({
+      title: title.trim(),
+      address: `${neighborhood}, Salvador/BA`,
+      neighborhood,
+      price: priceN,
+      deposit: priceN,
+      area: Number(area) || 50,
+      bedrooms: Number(bedrooms) || 1,
+      bathrooms: Number(bathrooms) || 1,
+      image:
+        image.trim() ||
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
+      amenities: [],
+      description: description.trim() || "Imóvel em Salvador/BA.",
+    });
+    setTitle(""); setPrice(""); setImage(""); setDescription("");
+    alert("Imóvel publicado! Já aparece na busca filtrando por " + neighborhood + ".");
+  };
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={submit} className="rounded-xl border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <PlusCircle className="h-5 w-5 text-primary" />
+          <h2 className="font-semibold">Cadastrar Novo Imóvel</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm sm:col-span-2">
+            <span className="mb-1 block font-medium">Título do Imóvel</span>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Apto 2 quartos em Pituba"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Valor do Aluguel (R$)</span>
+            <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Bairro (Salvador/BA)</span>
+            <select value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm">
+              {SALVADOR_NEIGHBORHOODS.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Quartos</span>
+            <input type="number" min={0} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Banheiros</span>
+            <input type="number" min={0} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Área (m²)</span>
+            <input type="number" min={0} value={area} onChange={(e) => setArea(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">URL da imagem (opcional)</span>
+            <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..."
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm sm:col-span-2">
+            <span className="mb-1 block font-medium">Descrição (opcional)</span>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </label>
+        </div>
+        <button type="submit"
+          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
+          Publicar Imóvel
+        </button>
+      </form>
+
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="border-b px-5 py-3">
+          <h2 className="font-semibold">Imóveis publicados ({mine.length})</h2>
+        </div>
+        {mine.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-muted-foreground">Você ainda não cadastrou imóveis.</p>
+        ) : (
+          <ul className="divide-y">
+            {mine.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 px-5 py-3">
+                <img src={p.image} alt="" className="h-12 w-16 rounded object-cover" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{p.title}</p>
+                  <p className="text-xs text-muted-foreground">{p.neighborhood} · {p.bedrooms}q · {p.area}m²</p>
+                </div>
+                <span className="text-sm font-semibold">R$ {p.price.toLocaleString("pt-BR")}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
 
