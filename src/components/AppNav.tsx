@@ -17,12 +17,13 @@ export function AppNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { user, logout } = useStore();
+  console.log("User state:", user);
 
   const links: NavLink[] = [...PUBLIC_LINKS];
-  if (user.isAuthenticated) {
-    if (user.role === "tenant") links.push(TENANT_LINK);
-    else if (user.role === "owner") links.push(OWNER_LINK);
-    else if (user.role === "admin") {
+  if (user?.isAuthenticated) {
+    if (user?.role === "tenant") links.push(TENANT_LINK);
+    else if (user?.role === "owner") links.push(OWNER_LINK);
+    else if (user?.role === "admin") {
       links.push(TENANT_LINK, OWNER_LINK, ADMIN_LINK);
     }
   }
