@@ -9,38 +9,241 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as QrRouteImport } from './routes/qr'
+import { Route as ProprietarioRouteImport } from './routes/proprietario'
+import { Route as InquilinoRouteImport } from './routes/inquilino'
+import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as CadastrarRouteImport } from './routes/cadastrar'
+import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ImovelIdRouteImport } from './routes/imovel.$id'
+import { Route as ContratoIdRouteImport } from './routes/contrato.$id'
+import { Route as ApiPublicSeedDemoAdminRouteImport } from './routes/api/public/seed-demo-admin'
 
+const QrRoute = QrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProprietarioRoute = ProprietarioRouteImport.update({
+  id: '/proprietario',
+  path: '/proprietario',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InquilinoRoute = InquilinoRouteImport.update({
+  id: '/inquilino',
+  path: '/inquilino',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastrarRoute = CadastrarRouteImport.update({
+  id: '/cadastrar',
+  path: '/cadastrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcessoNegadoRoute = AcessoNegadoRouteImport.update({
+  id: '/acesso-negado',
+  path: '/acesso-negado',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ImovelIdRoute = ImovelIdRouteImport.update({
+  id: '/imovel/$id',
+  path: '/imovel/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContratoIdRoute = ContratoIdRouteImport.update({
+  id: '/contrato/$id',
+  path: '/contrato/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSeedDemoAdminRoute = ApiPublicSeedDemoAdminRouteImport.update({
+  id: '/api/public/seed-demo-admin',
+  path: '/api/public/seed-demo-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acesso-negado': typeof AcessoNegadoRoute
+  '/admin': typeof AdminRoute
+  '/buscar': typeof BuscarRoute
+  '/cadastrar': typeof CadastrarRoute
+  '/entrar': typeof EntrarRoute
+  '/inquilino': typeof InquilinoRoute
+  '/proprietario': typeof ProprietarioRoute
+  '/qr': typeof QrRoute
+  '/contrato/$id': typeof ContratoIdRoute
+  '/imovel/$id': typeof ImovelIdRoute
+  '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acesso-negado': typeof AcessoNegadoRoute
+  '/admin': typeof AdminRoute
+  '/buscar': typeof BuscarRoute
+  '/cadastrar': typeof CadastrarRoute
+  '/entrar': typeof EntrarRoute
+  '/inquilino': typeof InquilinoRoute
+  '/proprietario': typeof ProprietarioRoute
+  '/qr': typeof QrRoute
+  '/contrato/$id': typeof ContratoIdRoute
+  '/imovel/$id': typeof ImovelIdRoute
+  '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acesso-negado': typeof AcessoNegadoRoute
+  '/admin': typeof AdminRoute
+  '/buscar': typeof BuscarRoute
+  '/cadastrar': typeof CadastrarRoute
+  '/entrar': typeof EntrarRoute
+  '/inquilino': typeof InquilinoRoute
+  '/proprietario': typeof ProprietarioRoute
+  '/qr': typeof QrRoute
+  '/contrato/$id': typeof ContratoIdRoute
+  '/imovel/$id': typeof ImovelIdRoute
+  '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/acesso-negado'
+    | '/admin'
+    | '/buscar'
+    | '/cadastrar'
+    | '/entrar'
+    | '/inquilino'
+    | '/proprietario'
+    | '/qr'
+    | '/contrato/$id'
+    | '/imovel/$id'
+    | '/api/public/seed-demo-admin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/acesso-negado'
+    | '/admin'
+    | '/buscar'
+    | '/cadastrar'
+    | '/entrar'
+    | '/inquilino'
+    | '/proprietario'
+    | '/qr'
+    | '/contrato/$id'
+    | '/imovel/$id'
+    | '/api/public/seed-demo-admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/acesso-negado'
+    | '/admin'
+    | '/buscar'
+    | '/cadastrar'
+    | '/entrar'
+    | '/inquilino'
+    | '/proprietario'
+    | '/qr'
+    | '/contrato/$id'
+    | '/imovel/$id'
+    | '/api/public/seed-demo-admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcessoNegadoRoute: typeof AcessoNegadoRoute
+  AdminRoute: typeof AdminRoute
+  BuscarRoute: typeof BuscarRoute
+  CadastrarRoute: typeof CadastrarRoute
+  EntrarRoute: typeof EntrarRoute
+  InquilinoRoute: typeof InquilinoRoute
+  ProprietarioRoute: typeof ProprietarioRoute
+  QrRoute: typeof QrRoute
+  ContratoIdRoute: typeof ContratoIdRoute
+  ImovelIdRoute: typeof ImovelIdRoute
+  ApiPublicSeedDemoAdminRoute: typeof ApiPublicSeedDemoAdminRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/qr': {
+      id: '/qr'
+      path: '/qr'
+      fullPath: '/qr'
+      preLoaderRoute: typeof QrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proprietario': {
+      id: '/proprietario'
+      path: '/proprietario'
+      fullPath: '/proprietario'
+      preLoaderRoute: typeof ProprietarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inquilino': {
+      id: '/inquilino'
+      path: '/inquilino'
+      fullPath: '/inquilino'
+      preLoaderRoute: typeof InquilinoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastrar': {
+      id: '/cadastrar'
+      path: '/cadastrar'
+      fullPath: '/cadastrar'
+      preLoaderRoute: typeof CadastrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acesso-negado': {
+      id: '/acesso-negado'
+      path: '/acesso-negado'
+      fullPath: '/acesso-negado'
+      preLoaderRoute: typeof AcessoNegadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +251,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/imovel/$id': {
+      id: '/imovel/$id'
+      path: '/imovel/$id'
+      fullPath: '/imovel/$id'
+      preLoaderRoute: typeof ImovelIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contrato/$id': {
+      id: '/contrato/$id'
+      path: '/contrato/$id'
+      fullPath: '/contrato/$id'
+      preLoaderRoute: typeof ContratoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/seed-demo-admin': {
+      id: '/api/public/seed-demo-admin'
+      path: '/api/public/seed-demo-admin'
+      fullPath: '/api/public/seed-demo-admin'
+      preLoaderRoute: typeof ApiPublicSeedDemoAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcessoNegadoRoute: AcessoNegadoRoute,
+  AdminRoute: AdminRoute,
+  BuscarRoute: BuscarRoute,
+  CadastrarRoute: CadastrarRoute,
+  EntrarRoute: EntrarRoute,
+  InquilinoRoute: InquilinoRoute,
+  ProprietarioRoute: ProprietarioRoute,
+  QrRoute: QrRoute,
+  ContratoIdRoute: ContratoIdRoute,
+  ImovelIdRoute: ImovelIdRoute,
+  ApiPublicSeedDemoAdminRoute: ApiPublicSeedDemoAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
