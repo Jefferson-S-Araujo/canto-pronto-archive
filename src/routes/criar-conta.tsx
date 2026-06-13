@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { User, FileText, ArrowLeft } from "lucide-react";
+import { useStore } from "@/lib/store";
+
 
 type CriarContaSearch = {
   step?: number;
