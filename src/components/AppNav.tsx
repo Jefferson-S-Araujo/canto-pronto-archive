@@ -1,16 +1,37 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Search, User, Building2, Shield, LogIn, QrCode } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Home, Search, User, Building2, Shield, LogIn, LogOut, QrCode } from "lucide-react";
+import { useStore } from "@/lib/store";
 
-const links = [
+type NavLink = { to: string; label: string; icon: typeof Home };
+
+const PUBLIC_LINKS: NavLink[] = [
   { to: "/", label: "Início", icon: Home },
   { to: "/buscar", label: "Buscar", icon: Search },
-  { to: "/inquilino", label: "Inquilino", icon: User },
-  { to: "/proprietario", label: "Proprietário", icon: Building2 },
-  { to: "/admin", label: "Admin", icon: Shield },
-] as const;
+];
+
+const TENANT_LINK: NavLink = { to: "/inquilino", label: "Inquilino", icon: User };
+const OWNER_LINK: NavLink = { to: "/proprietario", label: "Proprietário", icon: Building2 };
+const ADMIN_LINK: NavLink = { to: "/admin", label: "Admin", icon: Shield };
 
 export function AppNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const { user, logout } = useStore();
+
+  const links: NavLink[] = [...PUBLIC_LINKS];
+  if (user.isAuthenticated) {
+    if (user.role === "tenant") links.push(TENANT_LINK);
+    else if (user.role === "owner") links.push(OWNER_LINK);
+    else if (user.role === "admin") {
+      links.push(TENANT_LINK, OWNER_LINK, ADMIN_LINK);
+    }
+  }
+
+  const handleLogout = () => {
+    logout();
+    navigate({ to: "/" });
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
@@ -48,17 +69,30 @@ export function AppNav() {
           >
             <QrCode className="h-4 w-4" /> Celular
           </Link>
-          <Link
-            to="/entrar"
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary"
-          >
-            <LogIn className="h-4 w-4" /> Entrar
-          </Link>
+          {user.isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary"
+              title={user.name}
+            >
+              <LogOut className="h-4 w-4" /> Sair
+            </button>
+          ) : (
+            <Link
+              to="/entrar"
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary"
+            >
+              <LogIn className="h-4 w-4" /> Entrar
+            </Link>
+          )}
         </div>
       </div>
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur">
-        <div className="grid grid-cols-5">
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
+        >
           {links.map((l) => {
             const Icon = l.icon;
             const active = path === l.to || (l.to !== "/" && path.startsWith(l.to));
