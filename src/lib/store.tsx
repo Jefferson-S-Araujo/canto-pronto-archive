@@ -135,9 +135,12 @@ type Store = {
   disputes: Dispute[];
   // user actions
   setRole: (r: User["role"]) => void;
+  login: (data: { name: string; email: string; role: User["role"] }) => void;
+  logout: () => void;
   submitDocs: (name: string, docName: string) => "match" | "mismatch";
   approveUser: (id: string) => void;
   uploadCredit: (score: number) => void;
+
   // properties
   addProperty: (p: Omit<Property, "id" | "ownerId" | "certification" | "score">) => string;
   setCertification: (id: string, c: Certification, score: number) => void;
