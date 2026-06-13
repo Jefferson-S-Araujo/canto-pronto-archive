@@ -164,10 +164,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     id: "u1",
     name: "Convidado",
     role: "tenant",
+    isAuthenticated: false,
     docStatus: "none",
     creditScore: null,
     creditApproved: false,
   });
+
   const [properties, setProperties] = useState<Property[]>(SAMPLE_PROPS);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
