@@ -10,13 +10,22 @@ type CriarContaSearch = {
 };
 
 export const Route = createFileRoute("/criar-conta")({
-  validateSearch: (search: Record<string, unknown>): CriarContaSearch => ({
-    step: typeof search.step === "string" ? parseInt(search.step, 10) || 1 : 1,
-    userType:
-      search.userType === "tenant" || search.userType === "owner"
-        ? search.userType
-        : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): CriarContaSearch => {
+    const rawStep = search.step;
+    const step =
+      typeof rawStep === "number"
+        ? rawStep
+        : typeof rawStep === "string"
+          ? parseInt(rawStep, 10) || 1
+          : 1;
+    return {
+      step: step >= 1 && step <= 3 ? step : 1,
+      userType:
+        search.userType === "tenant" || search.userType === "owner"
+          ? search.userType
+          : undefined,
+    };
+  },
   component: CriarConta,
 });
 
