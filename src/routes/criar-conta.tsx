@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { User, FileText, ArrowLeft } from "lucide-react";
+import { useStore } from "@/lib/store";
+
 
 type CriarContaSearch = {
   step?: number;
@@ -20,7 +22,9 @@ export const Route = createFileRoute("/criar-conta")({
 
 function CriarConta() {
   const navigate = useNavigate();
+  const { login } = useStore();
   const { step = 1, userType: queryUserType } = Route.useSearch();
+
   const [userType, setUserType] = useState<"tenant" | "owner" | null>(
     queryUserType || null
   );
@@ -69,35 +73,22 @@ function CriarConta() {
   };
 
   const handleContinueStep3 = async () => {
+    if (!userType) return;
     setError("");
     setLoading(true);
-
     try {
-      const response = await fetch("/api/public/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          userType,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Erro ao criar conta");
-      }
-
-      // Redirect to login after successful signup
-      navigate({ to: "/entrar" });
+      // Simulate account creation + auto-login locally
+      await new Promise((r) => setTimeout(r, 500));
+      login({ name, email, role: userType });
+      // Redirect to role-appropriate area; header updates immediately
+      navigate({ to: userType === "owner" ? "/proprietario" : "/inquilino" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleBack = () => {
     if (step === 1) {

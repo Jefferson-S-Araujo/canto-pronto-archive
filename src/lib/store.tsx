@@ -23,11 +23,14 @@ export type Property = {
 export type User = {
   id: string;
   name: string;
+  email?: string;
   role: "tenant" | "owner" | "admin";
+  isAuthenticated: boolean;
   docStatus: "none" | "pending" | "approved" | "rejected";
   creditScore: number | null; // null = não enviou
   creditApproved: boolean;
 };
+
 
 export type ProposalPropertySnapshot = {
   title: string;
@@ -132,9 +135,12 @@ type Store = {
   disputes: Dispute[];
   // user actions
   setRole: (r: User["role"]) => void;
+  login: (data: { name: string; email: string; role: User["role"] }) => void;
+  logout: () => void;
   submitDocs: (name: string, docName: string) => "match" | "mismatch";
   approveUser: (id: string) => void;
   uploadCredit: (score: number) => void;
+
   // properties
   addProperty: (p: Omit<Property, "id" | "ownerId" | "certification" | "score">) => string;
   setCertification: (id: string, c: Certification, score: number) => void;
@@ -158,10 +164,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     id: "u1",
     name: "Convidado",
     role: "tenant",
+    isAuthenticated: false,
     docStatus: "none",
     creditScore: null,
     creditApproved: false,
   });
+
   const [properties, setProperties] = useState<Property[]>(SAMPLE_PROPS);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -174,6 +182,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     tickets,
     disputes,
     setRole: (r) => setUser((u) => ({ ...u, role: r })),
+    login: ({ name, email, role }) =>
+      setUser((u) => ({ ...u, name, email, role, isAuthenticated: true })),
+    logout: () =>
+      setUser({
+        id: "u1",
+        name: "Convidado",
+        role: "tenant",
+        isAuthenticated: false,
+        docStatus: "none",
+        creditScore: null,
+        creditApproved: false,
+      }),
+
     submitDocs: (name, docName) => {
       const match = name.trim().toLowerCase() === docName.trim().toLowerCase() && name.trim().length > 2;
       setUser((u) => ({ ...u, name, docStatus: match ? "pending" : "rejected" }));
