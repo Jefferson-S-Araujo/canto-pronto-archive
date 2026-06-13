@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
+import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
 import {
   Wallet,
   FileText,
@@ -10,9 +11,11 @@ import {
   Clock,
   Camera,
   KeyRound,
+  Home,
+  PlusCircle,
 } from "lucide-react";
 
-type Section = "financeiro" | "contratos" | "perfil";
+type Section = "financeiro" | "contratos" | "perfil" | "imoveis";
 
 type Invoice = {
   id: string;
