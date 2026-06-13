@@ -1,22 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listPublishedProperties } from "@/lib/properties.api";
 import { PropertyCard } from "@/components/PropertyCard";
-import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
 
 export const Route = createFileRoute("/buscar")({
   head: () => ({ meta: [{ title: "Buscar imóveis em Salvador — Canto Pronto" }] }),
   component: Buscar,
 });
 
-const NEIGHBORHOODS = ["Todos", "Barra", "Rio Vermelho", "Imbuí", "Brotas"];
+const NEIGHBORHOODS = ["Todos", ...SALVADOR_NEIGHBORHOODS];
 
 function Buscar() {
-  const { data: properties = [], isLoading } = useQuery({
-    queryKey: ["properties", "published"],
-    queryFn: listPublishedProperties,
-  });
+  const { properties } = useStore();
+  const isLoading = false;
   const [q, setQ] = useState("");
   const [bairro, setBairro] = useState("Todos");
   const [maxPrice, setMaxPrice] = useState(5000);
