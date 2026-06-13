@@ -182,6 +182,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     tickets,
     disputes,
     setRole: (r) => setUser((u) => ({ ...u, role: r })),
+    login: ({ name, email, role }) =>
+      setUser((u) => ({ ...u, name, email, role, isAuthenticated: true })),
+    logout: () =>
+      setUser({
+        id: "u1",
+        name: "Convidado",
+        role: "tenant",
+        isAuthenticated: false,
+        docStatus: "none",
+        creditScore: null,
+        creditApproved: false,
+      }),
+
     submitDocs: (name, docName) => {
       const match = name.trim().toLowerCase() === docName.trim().toLowerCase() && name.trim().length > 2;
       setUser((u) => ({ ...u, name, docStatus: match ? "pending" : "rejected" }));
