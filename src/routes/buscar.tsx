@@ -107,11 +107,6 @@ function Buscar() {
       <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((p) => <PropertyCard key={p.id} p={p} />)}
       </div>
-      {isLoading && (
-        <div className="mt-10 flex items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando imóveis...
-        </div>
-      )}
       {!isLoading && list.length === 0 && (
         <div className="mt-10 rounded-xl border bg-card p-10 text-center text-muted-foreground">
           Nenhum imóvel publicado ainda. Proprietários: cadastre seu imóvel no dashboard.
