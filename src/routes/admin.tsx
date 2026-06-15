@@ -45,7 +45,7 @@ export const Route = createFileRoute("/admin")({
 
 function Admin() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes">("passports");
+  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte">("passports");
 
   const { data: passports = [], isLoading: passLoading } = useQuery({
     queryKey: ["admin", "passports", "pending"],
