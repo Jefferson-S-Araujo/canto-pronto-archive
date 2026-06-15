@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { ensureDefaultRole, getMyRoles } from "@/lib/auth.functions";
@@ -78,7 +80,9 @@ function Entrar() {
       const target = redirect || routeForRoles(roles);
       navigate({ to: target as never });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao entrar");
+      const message = err instanceof Error ? err.message : "Falha ao entrar";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -86,25 +90,32 @@ function Entrar() {
 
   const onGoogle = async () => {
     setError("");
+    setLoading(true);
     if (redirect && typeof window !== "undefined") {
       sessionStorage.setItem("auth_redirect", redirect);
     }
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/entrar",
-    });
-    if (result.error) {
-      setError(result.error.message ?? "Falha no login com Google");
-      return;
-    }
-    if (result.redirected) return;
-    // tokens returned — onAuthStateChange in root will invalidate; navigate after role lookup
     try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/entrar",
+      });
+      if (result.error) {
+        const message = result.error.message ?? "Falha no login com Google";
+        setError(message);
+        toast.error(message);
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      // tokens returned — onAuthStateChange in root will invalidate; navigate after role lookup
       await ensureRole({ data: undefined as never });
       const { roles } = await fetchRoles();
       const target = redirect || routeForRoles(roles);
       navigate({ to: target as never });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro pós-login");
+      const message = err instanceof Error ? err.message : "Erro pós-login";
+      setError(message);
+      toast.error(message);
+      setLoading(false);
     }
   };
 
@@ -117,7 +128,8 @@ function Entrar() {
         <button
           type="button"
           onClick={onGoogle}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border bg-background py-2.5 text-sm font-medium hover:bg-secondary"
+          disabled={loading}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border bg-background py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-60"
         >
           <GoogleIcon /> Continuar com Google
         </button>
@@ -133,9 +145,10 @@ function Entrar() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
           >
-            {loading ? "Aguarde…" : "Entrar"}
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? "Carregando..." : "Entrar"}
           </button>
         </form>
 
