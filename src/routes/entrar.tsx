@@ -90,25 +90,32 @@ function Entrar() {
 
   const onGoogle = async () => {
     setError("");
+    setLoading(true);
     if (redirect && typeof window !== "undefined") {
       sessionStorage.setItem("auth_redirect", redirect);
     }
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/entrar",
-    });
-    if (result.error) {
-      setError(result.error.message ?? "Falha no login com Google");
-      return;
-    }
-    if (result.redirected) return;
-    // tokens returned — onAuthStateChange in root will invalidate; navigate after role lookup
     try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/entrar",
+      });
+      if (result.error) {
+        const message = result.error.message ?? "Falha no login com Google";
+        setError(message);
+        toast.error(message);
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      // tokens returned — onAuthStateChange in root will invalidate; navigate after role lookup
       await ensureRole({ data: undefined as never });
       const { roles } = await fetchRoles();
       const target = redirect || routeForRoles(roles);
       navigate({ to: target as never });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro pós-login");
+      const message = err instanceof Error ? err.message : "Erro pós-login";
+      setError(message);
+      toast.error(message);
+      setLoading(false);
     }
   };
 
