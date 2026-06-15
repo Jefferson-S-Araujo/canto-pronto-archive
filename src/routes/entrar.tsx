@@ -128,7 +128,8 @@ function Entrar() {
         <button
           type="button"
           onClick={onGoogle}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border bg-background py-2.5 text-sm font-medium hover:bg-secondary"
+          disabled={loading}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border bg-background py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-60"
         >
           <GoogleIcon /> Continuar com Google
         </button>
