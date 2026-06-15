@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/lib/store";
 import { AppNav } from "@/components/AppNav";
+import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -113,6 +114,7 @@ function RootComponent() {
         <div className="min-h-screen pb-16 md:pb-0">
           <AppNav />
           <Outlet />
+          <Toaster />
         </div>
       </StoreProvider>
     </QueryClientProvider>
