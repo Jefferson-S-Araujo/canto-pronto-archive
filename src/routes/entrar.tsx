@@ -145,9 +145,10 @@ function Entrar() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
           >
-            {loading ? "Aguarde…" : "Entrar"}
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? "Carregando..." : "Entrar"}
           </button>
         </form>
 
