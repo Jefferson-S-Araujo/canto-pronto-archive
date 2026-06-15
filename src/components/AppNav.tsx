@@ -1,6 +1,10 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Home, Search, User, Building2, Shield, LogIn, LogOut, QrCode } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
+import { getMyRoles, type AppRole } from "@/lib/auth.functions";
 
 type NavLink = { to: string; label: string; icon: typeof Home };
 
@@ -16,22 +20,68 @@ const ADMIN_LINK: NavLink = { to: "/admin", label: "Admin", icon: Shield };
 export function AppNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { user, logout } = useStore();
-  console.log("User state:", user);
+  const qc = useQueryClient();
+  const { user: mockUser, logout: mockLogout } = useStore();
 
-  const links: NavLink[] = [...PUBLIC_LINKS];
-  if (user?.isAuthenticated) {
-    if (user?.role === "tenant") links.push(TENANT_LINK);
-    else if (user?.role === "owner") links.push(OWNER_LINK);
-    else if (user?.role === "admin") {
-      links.push(TENANT_LINK, OWNER_LINK, ADMIN_LINK);
-    }
+  // Real Supabase session (source of truth when present)
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
+      setSessionUserId(data.user?.id ?? null);
+      setSessionEmail(data.user?.email ?? null);
+      setSessionReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setSessionUserId(session?.user?.id ?? null);
+      setSessionEmail(session?.user?.email ?? null);
+      setSessionReady(true);
+    });
+    return () => { mounted = false; subscription.unsubscribe(); };
+  }, []);
+
+  // Fetch real roles from DB whenever signed in
+  const { data: rolesData } = useQuery({
+    queryKey: ["my-roles", sessionUserId],
+    queryFn: () => getMyRoles(),
+    enabled: !!sessionUserId,
+    staleTime: 30_000,
+  });
+
+  const realRoles: AppRole[] = rolesData?.roles ?? [];
+  const isAuthenticated = !!sessionUserId || !!mockUser?.isAuthenticated;
+
+  // Real role wins; admin > owner > tenant
+  let role: AppRole | null = null;
+  if (sessionUserId) {
+    if (realRoles.includes("admin")) role = "admin";
+    else if (realRoles.includes("owner")) role = "owner";
+    else if (realRoles.includes("tenant")) role = "tenant";
+  } else if (mockUser?.isAuthenticated) {
+    role = mockUser.role;
   }
 
-  const handleLogout = () => {
-    logout();
+  console.log("Auth state:", { sessionUserId, sessionEmail, realRoles, role });
+
+  const links: NavLink[] = [...PUBLIC_LINKS];
+  if (isAuthenticated && role) {
+    if (role === "tenant") links.push(TENANT_LINK);
+    else if (role === "owner") links.push(OWNER_LINK);
+    else if (role === "admin") links.push(TENANT_LINK, OWNER_LINK, ADMIN_LINK);
+  }
+
+  const handleLogout = async () => {
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    mockLogout();
+    qc.clear();
     navigate({ to: "/" });
   };
+
+  const displayName = sessionEmail || mockUser?.name || "";
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
@@ -70,11 +120,11 @@ export function AppNav() {
           >
             <QrCode className="h-4 w-4" /> Celular
           </Link>
-          {user.isAuthenticated ? (
+          {isAuthenticated && sessionReady ? (
             <button
               onClick={handleLogout}
               className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary"
-              title={user.name}
+              title={displayName}
             >
               <LogOut className="h-4 w-4" /> Sair
             </button>
