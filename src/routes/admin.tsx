@@ -16,7 +16,8 @@ import {
 import { listAllTickets } from "@/lib/tickets.api";
 import { listDisputes, resolveDispute, setDisputeMediating } from "@/lib/disputes.api";
 import { TicketThread } from "@/components/TicketThread";
-import { ShieldCheck, Gavel, UserCheck, XCircle, FileText, Loader2, Wrench } from "lucide-react";
+import { ShieldCheck, Gavel, UserCheck, XCircle, FileText, Loader2, Wrench, KeyRound, Receipt, CalendarClock, LifeBuoy, Check, X, Eye, Download } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async ({ location }) => {
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/admin")({
 
 function Admin() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes">("passports");
+  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte">("passports");
 
   const { data: passports = [], isLoading: passLoading } = useQuery({
     queryKey: ["admin", "passports", "pending"],
@@ -117,6 +118,10 @@ function Admin() {
         <TabBtn active={tab === "disputes"} onClick={() => setTab("disputes")}>
           Disputas ({disputes.filter((d) => d.status !== "resolvida").length})
         </TabBtn>
+        <TabBtn active={tab === "contratos"} onClick={() => setTab("contratos")}>Contratos</TabBtn>
+        <TabBtn active={tab === "visitas"} onClick={() => setTab("visitas")}>Visitas</TabBtn>
+        <TabBtn active={tab === "suporte"} onClick={() => setTab("suporte")}>Suporte</TabBtn>
+        <TabBtn active={tab === "seguranca"} onClick={() => setTab("seguranca")}>Segurança</TabBtn>
       </nav>
 
       <div className="mt-6">
@@ -267,6 +272,11 @@ function Admin() {
             ))}
           </div>
         )}
+
+        {tab === "contratos" && <ContratosPanel />}
+        {tab === "visitas" && <VisitasPanel />}
+        {tab === "suporte" && <SuportePanel />}
+        {tab === "seguranca" && <SegurancaPanel />}
       </div>
     </main>
   );
@@ -299,5 +309,238 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
     <button onClick={onClick} className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium ${
       active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
     }`}>{children}</button>
+  );
+}
+
+// ============ Segurança ============
+function SegurancaPanel() {
+  const [pwd, setPwd] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (pwd.length < 8) return toast.error("A senha deve ter ao menos 8 caracteres.");
+    if (pwd !== confirm) return toast.error("As senhas não coincidem.");
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pwd });
+      if (error) throw error;
+      toast.success("Senha de administrador atualizada com sucesso.");
+      setPwd(""); setConfirm("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar senha.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="max-w-md rounded-xl border bg-card p-6">
+      <div className="mb-4 flex items-center gap-2">
+        <KeyRound className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold">Alterar senha do administrador</h3>
+      </div>
+      <form onSubmit={onSubmit} className="space-y-3">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">Nova senha</label>
+          <input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} required minLength={8}
+            className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">Confirmar nova senha</label>
+          <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8}
+            className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm" />
+        </div>
+        <button type="submit" disabled={loading}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />} Salvar nova senha
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// ============ Contratos Ativos (Salvador) ============
+const CONTRATOS_MOCK = [
+  { id: "CT-001", inquilino: "Ana Souza", proprietario: "Carlos Lima", bairro: "Pituba", valor: 2400 },
+  { id: "CT-002", inquilino: "Bruno Reis", proprietario: "Marta Dias", bairro: "Brotas", valor: 1800 },
+  { id: "CT-003", inquilino: "Camila Rocha", proprietario: "Eduardo Sá", bairro: "Ondina", valor: 3100 },
+  { id: "CT-004", inquilino: "Diego Alves", proprietario: "Lúcia Mota", bairro: "Cabula", valor: 1500 },
+  { id: "CT-005", inquilino: "Elaine Pires", proprietario: "Rafael Nunes", bairro: "Cajazeiras", valor: 1200 },
+];
+function ContratosPanel() {
+  return (
+    <div className="rounded-xl border bg-card">
+      <div className="flex items-center gap-2 border-b p-4">
+        <Receipt className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold">Contratos ativos · Salvador-BA</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="px-4 py-2 text-left">Contrato</th>
+              <th className="px-4 py-2 text-left">Inquilino</th>
+              <th className="px-4 py-2 text-left">Proprietário</th>
+              <th className="px-4 py-2 text-left">Bairro</th>
+              <th className="px-4 py-2 text-right">Aluguel</th>
+              <th className="px-4 py-2 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CONTRATOS_MOCK.map((c) => (
+              <tr key={c.id} className="border-t">
+                <td className="px-4 py-3 font-mono text-xs">{c.id}</td>
+                <td className="px-4 py-3">{c.inquilino}</td>
+                <td className="px-4 py-3">{c.proprietario}</td>
+                <td className="px-4 py-3">{c.bairro}</td>
+                <td className="px-4 py-3 text-right">R$ {c.valor.toLocaleString("pt-BR")}</td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => toast.success(`Boleto do contrato ${c.id} gerado e enviado por e-mail.`)}
+                      className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-secondary">
+                      <Download className="h-3.5 w-3.5" /> Gerar boleto
+                    </button>
+                    <button onClick={() => toast(`Visualizando contrato ${c.id}…`, { description: `${c.inquilino} · ${c.bairro}` })}
+                      className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-secondary">
+                      <Eye className="h-3.5 w-3.5" /> Ver contrato
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============ Visitas Técnicas ============
+type Visita = { id: string; titulo: string; data: string; status: "pendente" | "aprovada" | "recusada" };
+function VisitasPanel() {
+  const [items, setItems] = useState<Visita[]>([
+    { id: "V-101", titulo: "Inquilino Ana solicitou reparo elétrico no imóvel de Brotas", data: "2026-06-18 10:00", status: "pendente" },
+    { id: "V-102", titulo: "Vistoria de entrada no imóvel da Pituba", data: "2026-06-19 14:30", status: "pendente" },
+    { id: "V-103", titulo: "Reparo hidráulico em Ondina", data: "2026-06-22 09:00", status: "pendente" },
+  ]);
+
+  function update(id: string, patch: Partial<Visita>) {
+    setItems((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <CalendarClock className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold">Agendamentos de visitas técnicas</h3>
+      </div>
+      {items.map((v) => (
+        <div key={v.id} className="rounded-xl border bg-card p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-medium">{v.titulo}</p>
+              <p className="text-xs text-muted-foreground">Data sugerida: {v.data}</p>
+            </div>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+              v.status === "aprovada" ? "bg-success/15 text-success"
+              : v.status === "recusada" ? "bg-destructive/15 text-destructive"
+              : "bg-warning/15 text-warning-foreground"
+            }`}>{v.status}</span>
+          </div>
+          {v.status === "pendente" && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={() => { update(v.id, { status: "aprovada" }); toast.success("Visita aprovada."); }}
+                className="inline-flex items-center gap-1 rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-success-foreground">
+                <Check className="h-3.5 w-3.5" /> Aprovar
+              </button>
+              <button onClick={() => { update(v.id, { status: "recusada" }); toast("Visita recusada."); }}
+                className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
+                <X className="h-3.5 w-3.5" /> Recusar
+              </button>
+              <button onClick={() => {
+                const nova = window.prompt("Nova data (AAAA-MM-DD HH:MM):", v.data);
+                if (nova) { update(v.id, { data: nova }); toast.success("Data alterada."); }
+              }} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-secondary">
+                <CalendarClock className="h-3.5 w-3.5" /> Alterar data
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============ Suporte Técnico ============
+type Chamado = { id: string; autor: string; tipo: string; assunto: string; mensagem: string; status: "aberto" | "resolvido"; resposta?: string };
+function SuportePanel() {
+  const [items, setItems] = useState<Chamado[]>([
+    { id: "S-201", autor: "Ana (Inquilino)", tipo: "Dúvida", assunto: "Como pago meu aluguel?", mensagem: "Não encontrei o boleto deste mês no painel.", status: "aberto" },
+    { id: "S-202", autor: "Carlos (Proprietário)", tipo: "Problema no site", assunto: "Erro ao publicar imóvel", mensagem: "Ao clicar em publicar nada acontece.", status: "aberto" },
+    { id: "S-203", autor: "Bruno (Inquilino)", tipo: "Dúvida", assunto: "Renovação de contrato", mensagem: "Como funciona a renovação automática?", status: "aberto" },
+  ]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [resposta, setResposta] = useState("");
+
+  const aberto = items.find((c) => c.id === openId) ?? null;
+
+  function resolver() {
+    if (!aberto) return;
+    if (!resposta.trim()) return toast.error("Digite uma resposta antes de resolver.");
+    setItems((prev) => prev.map((c) => (c.id === aberto.id ? { ...c, status: "resolvido", resposta } : c)));
+    toast.success(`Chamado ${aberto.id} marcado como resolvido.`);
+    setOpenId(null); setResposta("");
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <LifeBuoy className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Chamados abertos</h3>
+        </div>
+        {items.map((c) => (
+          <button key={c.id} onClick={() => { setOpenId(c.id); setResposta(c.resposta ?? ""); }}
+            className={`w-full rounded-xl border bg-card p-3 text-left hover:bg-secondary/50 ${openId === c.id ? "ring-2 ring-primary" : ""}`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">{c.assunto}</p>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                c.status === "resolvido" ? "bg-success/15 text-success" : "bg-warning/15 text-warning-foreground"
+              }`}>{c.status}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{c.autor} · {c.tipo}</p>
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border bg-card p-4">
+        {!aberto ? (
+          <p className="text-sm text-muted-foreground">Selecione um chamado para visualizar e responder.</p>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground">{aberto.autor} · {aberto.tipo}</p>
+              <h4 className="font-semibold">{aberto.assunto}</h4>
+              <p className="mt-2 rounded-md bg-muted/40 p-3 text-sm">{aberto.mensagem}</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Resposta do administrador</label>
+              <textarea value={resposta} onChange={(e) => setResposta(e.target.value)} rows={4}
+                disabled={aberto.status === "resolvido"}
+                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-60" />
+            </div>
+            {aberto.status === "aberto" ? (
+              <button onClick={resolver}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                <Check className="h-4 w-4" /> Marcar como resolvido
+              </button>
+            ) : (
+              <p className="text-sm text-success font-medium">✓ Chamado resolvido</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
