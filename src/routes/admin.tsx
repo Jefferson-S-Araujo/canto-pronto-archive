@@ -118,6 +118,10 @@ function Admin() {
         <TabBtn active={tab === "disputes"} onClick={() => setTab("disputes")}>
           Disputas ({disputes.filter((d) => d.status !== "resolvida").length})
         </TabBtn>
+        <TabBtn active={tab === "contratos"} onClick={() => setTab("contratos")}>Contratos</TabBtn>
+        <TabBtn active={tab === "visitas"} onClick={() => setTab("visitas")}>Visitas</TabBtn>
+        <TabBtn active={tab === "suporte"} onClick={() => setTab("suporte")}>Suporte</TabBtn>
+        <TabBtn active={tab === "seguranca"} onClick={() => setTab("seguranca")}>Segurança</TabBtn>
       </nav>
 
       <div className="mt-6">
