@@ -272,6 +272,11 @@ function Admin() {
             ))}
           </div>
         )}
+
+        {tab === "contratos" && <ContratosPanel />}
+        {tab === "visitas" && <VisitasPanel />}
+        {tab === "suporte" && <SuportePanel />}
+        {tab === "seguranca" && <SegurancaPanel />}
       </div>
     </main>
   );
