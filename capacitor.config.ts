@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   // Modo hot-reload: app nativo carrega direto da URL publicada.
   // Após o primeiro publish, troque pela URL real (ex.: https://canto-pronto.lovable.app).
   server: {
-    url: "https://canto-pronto-app.lovable.app",
+    url: "https://project-mirror-helper.lovable.app",
     cleartext: true,
   },
 };
