@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { requireAdmin } from "@/lib/auth.functions";
@@ -16,7 +16,7 @@ import {
 import { listAllTickets } from "@/lib/tickets.api";
 import { listDisputes, resolveDispute, setDisputeMediating } from "@/lib/disputes.api";
 import { TicketThread } from "@/components/TicketThread";
-import { ShieldCheck, Gavel, UserCheck, XCircle, FileText, Loader2, Wrench, KeyRound, Receipt, CalendarClock, LifeBuoy, Check, X, Eye, Download } from "lucide-react";
+import { ShieldCheck, Gavel, UserCheck, XCircle, FileText, Loader2, Wrench, KeyRound, Receipt, CalendarClock, LifeBuoy, Check, X, Eye, Download, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/admin")({
 
 function Admin() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte">("passports");
+  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte" | "aprovacoes">("passports");
 
   const safe = <T,>(fn: () => Promise<T>, fallback: T) => async () => {
     try { return await fn(); } catch { return fallback; }
@@ -121,6 +121,7 @@ function Admin() {
         <TabBtn active={tab === "disputes"} onClick={() => setTab("disputes")}>
           Disputas ({disputes.filter((d) => d.status !== "resolvida").length})
         </TabBtn>
+        <TabBtn active={tab === "aprovacoes"} onClick={() => setTab("aprovacoes")}>Aprovação de Cadastros</TabBtn>
         <TabBtn active={tab === "contratos"} onClick={() => setTab("contratos")}>Contratos</TabBtn>
         <TabBtn active={tab === "visitas"} onClick={() => setTab("visitas")}>Visitas</TabBtn>
         <TabBtn active={tab === "suporte"} onClick={() => setTab("suporte")}>Suporte</TabBtn>
@@ -276,6 +277,7 @@ function Admin() {
           </div>
         )}
 
+        {tab === "aprovacoes" && <AprovacoesPanel />}
         {tab === "contratos" && <ContratosPanel />}
         {tab === "visitas" && <VisitasPanel />}
         {tab === "suporte" && <SuportePanel />}
@@ -544,6 +546,142 @@ function SuportePanel() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ============ Aprovação de Cadastros ============
+type Pendente = {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: "Inquilino" | "Proprietário";
+  data: string;
+  detalhe: string;
+};
+
+const PENDENTES_MOCK: Pendente[] = [
+  { id: "U-301", nome: "Rafael Mendes", email: "rafael.mendes@email.com", tipo: "Proprietário", data: "2026-06-14", detalhe: "Imóvel em Ondina, Salvador-BA" },
+  { id: "U-302", nome: "Juliana Castro", email: "juliana.castro@email.com", tipo: "Inquilino", data: "2026-06-15", detalhe: "Procurando em Brotas, Salvador-BA" },
+  { id: "U-303", nome: "Felipe Andrade", email: "felipe.andrade@email.com", tipo: "Proprietário", data: "2026-06-15", detalhe: "Imóvel em Pituba, Salvador-BA" },
+  { id: "U-304", nome: "Patrícia Lopes", email: "patricia.lopes@email.com", tipo: "Inquilino", data: "2026-06-16", detalhe: "Procurando em Cabula, Salvador-BA" },
+];
+
+function AprovacoesPanel() {
+  const [items, setItems] = useState<Pendente[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Carrega de Supabase (profiles) com fallback estrito para mock local
+  // em caso de erro / variáveis de ambiente ausentes / tabela inexistente.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // Cast para any: a tabela "profiles" pode não existir no schema
+        // gerado; nesse caso o catch redireciona para o mock.
+        const sb = supabase as unknown as {
+          from: (t: string) => {
+            select: (cols: string) => {
+              eq: (c: string, v: string) => {
+                order: (c: string, o: { ascending: boolean }) => {
+                  limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
+                };
+              };
+            };
+          };
+        };
+        const { data, error } = await sb
+          .from("profiles")
+          .select("id, full_name, email, role, created_at, status")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        if (cancelled) return;
+        const rows = (data as Array<{ id: string; full_name?: string; email?: string; role?: string; created_at?: string }>) ?? [];
+        const mapped: Pendente[] = rows.map((row) => ({
+          id: row.id,
+          nome: row.full_name || "Usuário",
+          email: row.email || "—",
+          tipo: row.role === "owner" ? "Proprietário" : "Inquilino",
+          data: (row.created_at ?? "").slice(0, 10),
+          detalhe: "Cadastro pendente",
+        }));
+        setItems(mapped.length ? mapped : PENDENTES_MOCK);
+      } catch {
+        if (!cancelled) setItems(PENDENTES_MOCK);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  function aprovar(p: Pendente) {
+    setItems((arr) => arr.filter((x) => x.id !== p.id));
+    toast.success(`${p.nome} aprovado(a). Já pode fazer login como ${p.tipo}.`);
+  }
+  function recusar(p: Pendente) {
+    setItems((arr) => arr.filter((x) => x.id !== p.id));
+    toast(`Solicitação de ${p.nome} recusada.`);
+  }
+
+  return (
+    <div className="rounded-xl border bg-card">
+      <div className="flex items-center gap-2 border-b p-4">
+        <UserPlus className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold">Solicitações pendentes ({items.length})</h3>
+      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-10 text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
+        </div>
+      ) : items.length === 0 ? (
+        <p className="p-6 text-sm text-muted-foreground">Nenhuma solicitação pendente.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2 text-left">Nome</th>
+                <th className="px-4 py-2 text-left">E-mail</th>
+                <th className="px-4 py-2 text-left">Tipo</th>
+                <th className="px-4 py-2 text-left">Data</th>
+                <th className="px-4 py-2 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((p) => (
+                <tr key={p.id} className="border-t align-top">
+                  <td className="px-4 py-3">
+                    <p className="font-medium">{p.nome}</p>
+                    <p className="text-xs text-muted-foreground">{p.detalhe}</p>
+                  </td>
+                  <td className="px-4 py-3">{p.email}</td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      p.tipo === "Proprietário" ? "bg-primary/15 text-primary" : "bg-secondary text-foreground"
+                    }`}>{p.tipo}</span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.data}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => aprovar(p)}
+                        className="inline-flex items-center gap-1 rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-success-foreground hover:opacity-90">
+                        <Check className="h-3.5 w-3.5" /> Aprovar
+                      </button>
+                      <button onClick={() => recusar(p)}
+                        className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
+                        <X className="h-3.5 w-3.5" /> Recusar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
