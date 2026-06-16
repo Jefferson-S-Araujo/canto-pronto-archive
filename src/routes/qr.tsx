@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Copy, Check, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getPublicAppUrl } from "@/lib/config";
+
+// ESCREVA SEU LINK NOVO AQUI DENTRO DAS ASPAS:
+const MEU_LINK_PERSONALIZADO = "https://project-mirror-helper.lovable.app";
 
 export const Route = createFileRoute("/qr")({
   ssr: false,
@@ -24,7 +26,8 @@ function QrPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setUrl(getPublicAppUrl());
+    // Força o uso do seu link customizado
+    setUrl(MEU_LINK_PERSONALIZADO);
   }, []);
 
   const copy = async () => {
