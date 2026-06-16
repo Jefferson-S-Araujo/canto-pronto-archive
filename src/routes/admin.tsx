@@ -572,12 +572,25 @@ function AprovacoesPanel() {
   const [loading, setLoading] = useState(true);
 
   // Carrega de Supabase (profiles) com fallback estrito para mock local
-  // em caso de erro / variáveis de ambiente ausentes.
-  useState(() => {
+  // em caso de erro / variáveis de ambiente ausentes / tabela inexistente.
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await supabase
+        // Cast para any: a tabela "profiles" pode não existir no schema
+        // gerado; nesse caso o catch redireciona para o mock.
+        const sb = supabase as unknown as {
+          from: (t: string) => {
+            select: (cols: string) => {
+              eq: (c: string, v: string) => {
+                order: (c: string, o: { ascending: boolean }) => {
+                  limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
+                };
+              };
+            };
+          };
+        };
+        const { data, error } = await sb
           .from("profiles")
           .select("id, full_name, email, role, created_at, status")
           .eq("status", "pending")
@@ -585,17 +598,15 @@ function AprovacoesPanel() {
           .limit(20);
         if (error) throw error;
         if (cancelled) return;
-        const mapped: Pendente[] = (data ?? []).map((r) => {
-          const row = r as { id: string; full_name?: string; email?: string; role?: string; created_at?: string };
-          return {
-            id: row.id,
-            nome: row.full_name || "Usuário",
-            email: row.email || "—",
-            tipo: row.role === "owner" ? "Proprietário" : "Inquilino",
-            data: (row.created_at ?? "").slice(0, 10),
-            detalhe: "Cadastro pendente",
-          };
-        });
+        const rows = (data as Array<{ id: string; full_name?: string; email?: string; role?: string; created_at?: string }>) ?? [];
+        const mapped: Pendente[] = rows.map((row) => ({
+          id: row.id,
+          nome: row.full_name || "Usuário",
+          email: row.email || "—",
+          tipo: row.role === "owner" ? "Proprietário" : "Inquilino",
+          data: (row.created_at ?? "").slice(0, 10),
+          detalhe: "Cadastro pendente",
+        }));
         setItems(mapped.length ? mapped : PENDENTES_MOCK);
       } catch {
         if (!cancelled) setItems(PENDENTES_MOCK);
@@ -604,7 +615,7 @@ function AprovacoesPanel() {
       }
     })();
     return () => { cancelled = true; };
-  });
+  }, []);
 
   function aprovar(p: Pendente) {
     setItems((arr) => arr.filter((x) => x.id !== p.id));
