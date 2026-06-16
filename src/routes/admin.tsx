@@ -45,7 +45,7 @@ export const Route = createFileRoute("/admin")({
 
 function Admin() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte">("passports");
+  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte" | "aprovacoes">("passports");
 
   const safe = <T,>(fn: () => Promise<T>, fallback: T) => async () => {
     try { return await fn(); } catch { return fallback; }
