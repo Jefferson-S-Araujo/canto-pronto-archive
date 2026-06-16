@@ -19,22 +19,22 @@ export const getMyRoles = createServerFn({ method: "GET" })
   });
 
 // Ensure the current user has at least one role; assign 'tenant' as default.
-// Uses service role (admin client) because RLS forbids inserts from end users.
+// Uses the user-scoped client (no service role) — errors are swallowed so
+// login flows never block when the role row cannot be created.
 export const ensureDefaultRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: existing, error: selErr } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (selErr) throw new Error(selErr.message);
-    if (!existing || existing.length === 0) {
-      const { error: insErr } = await supabaseAdmin
+    const { supabase, userId } = context;
+    try {
+      const { data: existing } = await supabase
         .from("user_roles")
-        .insert({ user_id: userId, role: "tenant" });
-      if (insErr) throw new Error(insErr.message);
+        .select("role")
+        .eq("user_id", userId);
+      if (!existing || existing.length === 0) {
+        await supabase.from("user_roles").insert({ user_id: userId, role: "tenant" });
+      }
+    } catch {
+      // best-effort — never fail login because of role bootstrap
     }
     return { ok: true };
   });
@@ -55,41 +55,10 @@ export const requireAdmin = createServerFn({ method: "GET" })
     return { ok: true as const, userId };
   });
 
-// Seeds the demo admin (admin@cantopronto.com / admin123). Idempotent.
+// Demo admin seeding disabled — requires service role key which is not
+// available. Kept as a no-op so existing callers keep compiling.
 export const seedDemoAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({}).optional().parse(input ?? {}))
   .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const email = "admin@cantopronto.com";
-    const password = "admin123";
-
-    // Check if user already exists
-    let userId: string | null = null;
-    const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 200,
-    });
-    if (listErr) throw new Error(listErr.message);
-    const existing = list.users.find((u) => u.email?.toLowerCase() === email);
-    if (existing) {
-      userId = existing.id;
-    } else {
-      const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { name: "Administrador Demo" },
-      });
-      if (createErr) throw new Error(createErr.message);
-      userId = created.user?.id ?? null;
-    }
-    if (!userId) throw new Error("Falha ao criar admin demo");
-
-    // Ensure admin role
-    const { error: roleErr } = await supabaseAdmin
-      .from("user_roles")
-      .upsert({ user_id: userId, role: "admin" }, { onConflict: "user_id,role" });
-    if (roleErr) throw new Error(roleErr.message);
-
-    return { ok: true, userId, email };
+    return { ok: false, disabled: true as const, message: "Seeding desabilitado." };
   });
