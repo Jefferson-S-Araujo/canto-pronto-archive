@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Copy, Check, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
-// ESCREVA SEU LINK NOVO AQUI DENTRO DAS ASPAS:
-const MEU_LINK_PERSONALIZADO = "https://project-mirror-helper.lovable.app";
 
 export const Route = createFileRoute("/qr")({
   ssr: false,
@@ -22,13 +19,9 @@ export const Route = createFileRoute("/qr")({
 });
 
 function QrPage() {
-  const [url, setUrl] = useState("");
+  // Configurado com o seu novo subdomínio oficial:
+  const [url] = useState("https://canto-pronto-ssa.lovable.app");
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    // Força o uso do seu link customizado
-    setUrl(MEU_LINK_PERSONALIZADO);
-  }, []);
 
   const copy = async () => {
     await navigator.clipboard.writeText(url);
@@ -62,7 +55,7 @@ function QrPage() {
           </div>
           <div className="space-y-2">
             <div className="rounded-md bg-muted px-3 py-2 text-xs font-mono break-all">
-              {url || "carregando..."}
+              {url}
             </div>
             <Button onClick={copy} variant="outline" size="sm" className="w-full">
               {copied ? (
