@@ -301,8 +301,62 @@ function CriarConta() {
           </>
         )}
 
-        {/* STEP 3: Review */}
+        {/* STEP 3: Antifraud */}
         {step === 3 && (
+          <>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Cadastro & Antifraude
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Validação visual obrigatória antes de finalizar
+            </p>
+
+            <div className="mt-6 space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                <p className="text-muted-foreground">Nome cadastrado</p>
+                <p className="mt-0.5 font-semibold">{name || "—"}</p>
+              </div>
+
+              <Field
+                label="Nome impresso no documento (simula OCR)"
+                placeholder="Ex: Maria Silva"
+                value={docName}
+                onChange={(e) => setDocName(e.target.value)}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FileBox
+                  label="Foto do RG/CNH"
+                  checked={hasDoc}
+                  onCheck={() => setHasDoc(true)}
+                />
+                <FileBox
+                  label="Selfie"
+                  checked={hasSelfie}
+                  onCheck={() => setHasSelfie(true)}
+                />
+              </div>
+
+              {error && (
+                <p className="flex items-start gap-1.5 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" /> {error}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleValidateAntifraud}
+                disabled={!docName || !hasDoc || !hasSelfie}
+                className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-50"
+              >
+                Validar e Continuar
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* STEP 4: Review */}
+        {step === 4 && (
           <>
             <h1 className="text-2xl font-bold tracking-tight">
               Revisar Informações
@@ -315,22 +369,22 @@ function CriarConta() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Tipo</p>
                 <p className="mt-1 text-sm font-semibold">
-                  {userType === "tenant"
-                    ? "Sou Inquilino"
-                    : "Sou Proprietário"}
+                  {userType === "tenant" ? "Sou Inquilino" : "Sou Proprietário"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Nome
-                </p>
+                <p className="text-xs font-medium text-muted-foreground">Nome</p>
                 <p className="mt-1 text-sm font-semibold">{name}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  E-mail
-                </p>
+                <p className="text-xs font-medium text-muted-foreground">E-mail</p>
                 <p className="mt-1 text-sm font-semibold">{email}</p>
+              </div>
+              <div className="flex items-center gap-2 text-success">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  Antifraude validado
+                </span>
               </div>
             </div>
 
@@ -339,7 +393,7 @@ function CriarConta() {
             )}
 
             <button
-              onClick={handleContinueStep3}
+              onClick={handleContinueStep4}
               disabled={loading}
               className="mt-6 w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
             >
