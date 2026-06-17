@@ -15,6 +15,7 @@ export type Property = {
   score: number;
   certification: Certification;
   image: string;
+  images?: string[];
   amenities: string[];
   description: string;
   ownerId: string;
@@ -143,6 +144,8 @@ type Store = {
 
   // properties
   addProperty: (p: Omit<Property, "id" | "ownerId" | "certification" | "score">) => string;
+  updateProperty: (id: string, patch: Partial<Property>) => void;
+  deleteProperty: (id: string) => void;
   setCertification: (id: string, c: Certification, score: number) => void;
   // proposals
   createProposal: (propertyId: string, snapshot?: ProposalPropertySnapshot) => string;
@@ -211,6 +214,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ]);
       return id;
     },
+    updateProperty: (id, patch) =>
+      setProperties((arr) => arr.map((p) => (p.id === id ? { ...p, ...patch } : p))),
+    deleteProperty: (id) =>
+      setProperties((arr) => arr.filter((p) => p.id !== id)),
     setCertification: (id, c, score) =>
       setProperties((arr) => arr.map((p) => (p.id === id ? { ...p, certification: c, score } : p))),
     createProposal: (propertyId, snapshot) => {

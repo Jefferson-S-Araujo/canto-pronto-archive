@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { User, FileText, ArrowLeft } from "lucide-react";
+import { User, FileText, ArrowLeft, ShieldCheck, Upload, AlertCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 
+const TOTAL_STEPS = 4;
 
 type CriarContaSearch = {
   step?: number;
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/criar-conta")({
           ? parseInt(rawStep, 10) || 1
           : 1;
     return {
-      step: step >= 1 && step <= 3 ? step : 1,
+      step: step >= 1 && step <= TOTAL_STEPS ? step : 1,
       userType:
         search.userType === "tenant" || search.userType === "owner"
           ? search.userType
@@ -43,6 +44,12 @@ function CriarConta() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Antifraud state (step 3)
+  const [docName, setDocName] = useState("");
+  const [hasDoc, setHasDoc] = useState(false);
+  const [hasSelfie, setHasSelfie] = useState(false);
+  const [fraudOk, setFraudOk] = useState(false);
 
   const handleContinueStep1 = () => {
     if (!userType) return;
@@ -81,15 +88,42 @@ function CriarConta() {
     });
   };
 
-  const handleContinueStep3 = async () => {
+  const handleValidateAntifraud = () => {
+    setError("");
+    if (!docName.trim()) {
+      setError("Digite o nome impresso no documento.");
+      return;
+    }
+    if (!hasDoc || !hasSelfie) {
+      setError("Envie o RG/CNH e a selfie para validação.");
+      return;
+    }
+    const match =
+      docName.trim().toLowerCase() === name.trim().toLowerCase() &&
+      name.trim().length > 2;
+    if (!match) {
+      setError(
+        "O nome do documento não confere com o nome cadastrado. Verifique e tente novamente."
+      );
+      setFraudOk(false);
+      return;
+    }
+    setFraudOk(true);
+    navigate({ to: "/criar-conta", search: { step: 4, userType } });
+  };
+
+  const handleContinueStep4 = async () => {
     if (!userType) return;
+    if (!fraudOk) {
+      setError("Conclua a validação do Antifraude antes de finalizar.");
+      navigate({ to: "/criar-conta", search: { step: 3, userType } });
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      // Simulate account creation + auto-login locally
       await new Promise((r) => setTimeout(r, 500));
       login({ name, email, role: userType });
-      // Redirect to role-appropriate area; header updates immediately
       navigate({ to: userType === "owner" ? "/proprietario" : "/inquilino" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta");
@@ -129,7 +163,7 @@ function CriarConta() {
         {/* Progress Bar */}
         <div className="mb-6 space-y-2">
           <div className="flex gap-2 h-1.5">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className={`flex-1 rounded-full transition-colors ${
@@ -139,7 +173,7 @@ function CriarConta() {
             ))}
           </div>
           <p className="text-center text-xs font-medium text-muted-foreground">
-            Etapa {step} de 3
+            Etapa {step} de {TOTAL_STEPS}
           </p>
         </div>
 
@@ -267,8 +301,62 @@ function CriarConta() {
           </>
         )}
 
-        {/* STEP 3: Review */}
+        {/* STEP 3: Antifraud */}
         {step === 3 && (
+          <>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Cadastro & Antifraude
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Validação visual obrigatória antes de finalizar
+            </p>
+
+            <div className="mt-6 space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                <p className="text-muted-foreground">Nome cadastrado</p>
+                <p className="mt-0.5 font-semibold">{name || "—"}</p>
+              </div>
+
+              <Field
+                label="Nome impresso no documento (simula OCR)"
+                placeholder="Ex: Maria Silva"
+                value={docName}
+                onChange={(e) => setDocName(e.target.value)}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FileBox
+                  label="Foto do RG/CNH"
+                  checked={hasDoc}
+                  onCheck={() => setHasDoc(true)}
+                />
+                <FileBox
+                  label="Selfie"
+                  checked={hasSelfie}
+                  onCheck={() => setHasSelfie(true)}
+                />
+              </div>
+
+              {error && (
+                <p className="flex items-start gap-1.5 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" /> {error}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleValidateAntifraud}
+                disabled={!docName || !hasDoc || !hasSelfie}
+                className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-50"
+              >
+                Validar e Continuar
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* STEP 4: Review */}
+        {step === 4 && (
           <>
             <h1 className="text-2xl font-bold tracking-tight">
               Revisar Informações
@@ -281,22 +369,22 @@ function CriarConta() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Tipo</p>
                 <p className="mt-1 text-sm font-semibold">
-                  {userType === "tenant"
-                    ? "Sou Inquilino"
-                    : "Sou Proprietário"}
+                  {userType === "tenant" ? "Sou Inquilino" : "Sou Proprietário"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Nome
-                </p>
+                <p className="text-xs font-medium text-muted-foreground">Nome</p>
                 <p className="mt-1 text-sm font-semibold">{name}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  E-mail
-                </p>
+                <p className="text-xs font-medium text-muted-foreground">E-mail</p>
                 <p className="mt-1 text-sm font-semibold">{email}</p>
+              </div>
+              <div className="flex items-center gap-2 text-success">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  Antifraude validado
+                </span>
               </div>
             </div>
 
@@ -305,7 +393,7 @@ function CriarConta() {
             )}
 
             <button
-              onClick={handleContinueStep3}
+              onClick={handleContinueStep4}
               disabled={loading}
               className="mt-6 w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
             >
@@ -338,5 +426,32 @@ function Field({
         className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
     </label>
+  );
+}
+
+function FileBox({
+  label,
+  checked,
+  onCheck,
+}: {
+  label: string;
+  checked: boolean;
+  onCheck: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onCheck}
+      className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-5 transition ${
+        checked
+          ? "border-success bg-success/5 text-success"
+          : "border-border hover:bg-secondary"
+      }`}
+    >
+      <Upload className="h-5 w-5" />
+      <span className="text-xs font-medium">
+        {checked ? `${label} ✓` : label}
+      </span>
+    </button>
   );
 }
