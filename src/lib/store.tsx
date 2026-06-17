@@ -144,6 +144,8 @@ type Store = {
 
   // properties
   addProperty: (p: Omit<Property, "id" | "ownerId" | "certification" | "score">) => string;
+  updateProperty: (id: string, patch: Partial<Property>) => void;
+  deleteProperty: (id: string) => void;
   setCertification: (id: string, c: Certification, score: number) => void;
   // proposals
   createProposal: (propertyId: string, snapshot?: ProposalPropertySnapshot) => string;
