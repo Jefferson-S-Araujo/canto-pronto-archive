@@ -214,6 +214,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ]);
       return id;
     },
+    updateProperty: (id, patch) =>
+      setProperties((arr) => arr.map((p) => (p.id === id ? { ...p, ...patch } : p))),
+    deleteProperty: (id) =>
+      setProperties((arr) => arr.filter((p) => p.id !== id)),
     setCertification: (id, c, score) =>
       setProperties((arr) => arr.map((p) => (p.id === id ? { ...p, certification: c, score } : p))),
     createProposal: (propertyId, snapshot) => {
