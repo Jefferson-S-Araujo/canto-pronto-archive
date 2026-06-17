@@ -15,6 +15,7 @@ export type Property = {
   score: number;
   certification: Certification;
   image: string;
+  images: string[];
   amenities: string[];
   description: string;
   ownerId: string;
