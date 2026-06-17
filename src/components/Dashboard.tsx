@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useStore } from "@/lib/store";
+import { useStore, type Property } from "@/lib/store";
 import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Wallet,
   FileText,
@@ -13,6 +15,10 @@ import {
   KeyRound,
   Home,
   PlusCircle,
+  ImagePlus,
+  Trash2,
+  X,
+  Pencil,
 } from "lucide-react";
 
 type Section = "financeiro" | "contratos" | "perfil" | "imoveis";
