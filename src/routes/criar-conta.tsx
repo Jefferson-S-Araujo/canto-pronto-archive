@@ -163,7 +163,7 @@ function CriarConta() {
         {/* Progress Bar */}
         <div className="mb-6 space-y-2">
           <div className="flex gap-2 h-1.5">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className={`flex-1 rounded-full transition-colors ${
@@ -173,7 +173,7 @@ function CriarConta() {
             ))}
           </div>
           <p className="text-center text-xs font-medium text-muted-foreground">
-            Etapa {step} de 3
+            Etapa {step} de {TOTAL_STEPS}
           </p>
         </div>
 
