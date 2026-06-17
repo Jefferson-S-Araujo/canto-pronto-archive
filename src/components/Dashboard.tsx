@@ -108,8 +108,52 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
   );
 }
 
+const BUCKET = "property-images";
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80";
+
+async function ensureBucket() {
+  try {
+    await supabase.storage.createBucket(BUCKET, { public: true });
+  } catch {
+    // ignore — bucket may already exist or anon may not be allowed; upload will still work if it exists
+  }
+}
+
+async function uploadImage(file: File): Promise<string> {
+  await ensureBucket();
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type || "image/jpeg",
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function fileToDataUrl(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(f);
+  });
+}
+
+async function uploadWithFallback(file: File): Promise<string> {
+  try {
+    return await uploadImage(file);
+  } catch {
+    // Fallback: keep image locally as a data URL so the UI keeps working offline / without storage
+    return await fileToDataUrl(file);
+  }
+}
+
 function MeusImoveis() {
-  const { properties, user, addProperty } = useStore();
+  const { properties, user, addProperty, updateProperty, deleteProperty } = useStore();
   const mine = properties.filter((p) => p.ownerId === user.id);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -117,14 +161,40 @@ function MeusImoveis() {
   const [bedrooms, setBedrooms] = useState("2");
   const [bathrooms, setBathrooms] = useState("1");
   const [area, setArea] = useState("50");
-  const [image, setImage] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [description, setDescription] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState<Property | null>(null);
+
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const f of Array.from(files)) {
+        if (!f.type.startsWith("image/")) continue;
+        urls.push(await uploadWithFallback(f));
+      }
+      setImages((arr) => [...arr, ...urls]);
+      toast.success(`${urls.length} foto(s) adicionada(s).`);
+    } catch (e) {
+      toast.error("Falha ao enviar imagens.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setImages((arr) => arr.filter((_, i) => i !== idx));
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const priceN = Number(price);
     if (!title.trim() || !priceN || !neighborhood) {
-      return alert("Preencha título, valor e bairro.");
+      return toast.error("Preencha título, valor e bairro.");
     }
     addProperty({
       title: title.trim(),
@@ -135,14 +205,13 @@ function MeusImoveis() {
       area: Number(area) || 50,
       bedrooms: Number(bedrooms) || 1,
       bathrooms: Number(bathrooms) || 1,
-      image:
-        image.trim() ||
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
+      image: images[0] || FALLBACK_IMG,
+      images,
       amenities: [],
       description: description.trim() || "Imóvel em Salvador/BA.",
     });
-    setTitle(""); setPrice(""); setImage(""); setDescription("");
-    alert("Imóvel publicado! Já aparece na busca filtrando por " + neighborhood + ".");
+    setTitle(""); setPrice(""); setImages([]); setDescription("");
+    toast.success(`Imóvel publicado em ${neighborhood}!`);
   };
 
   return (
@@ -185,17 +254,51 @@ function MeusImoveis() {
             <input type="number" min={0} value={area} onChange={(e) => setArea(e.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
           </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">URL da imagem (opcional)</span>
-            <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..."
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
-          </label>
           <label className="block text-sm sm:col-span-2">
             <span className="mb-1 block font-medium">Descrição (opcional)</span>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
           </label>
         </div>
+
+        {/* Image uploader */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Fotos do imóvel</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {images.map((src, i) => (
+              <div key={i} className="relative aspect-square overflow-hidden rounded-md border bg-muted group">
+                <img src={src} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  className="absolute top-1 right-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-90 hover:opacity-100"
+                  aria-label="Remover foto"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed text-xs text-muted-foreground hover:bg-secondary disabled:opacity-50"
+            >
+              <ImagePlus className="h-5 w-5" />
+              {uploading ? "Enviando…" : "Adicionar"}
+            </button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => onPickFiles(e.target.files)}
+          />
+          <p className="text-xs text-muted-foreground">As fotos ficam públicas no Supabase Storage (bucket “{BUCKET}”).</p>
+        </div>
+
         <button type="submit"
           className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
           Publicar Imóvel
@@ -215,13 +318,140 @@ function MeusImoveis() {
                 <img src={p.image} alt="" className="h-12 w-16 rounded object-cover" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{p.title}</p>
-                  <p className="text-xs text-muted-foreground">{p.neighborhood} · {p.bedrooms}q · {p.area}m²</p>
+                  <p className="text-xs text-muted-foreground">
+                    {p.neighborhood} · {p.bedrooms}q · {p.area}m² · {(p.images?.length ?? 0)} foto(s)
+                  </p>
                 </div>
                 <span className="text-sm font-semibold">R$ {p.price.toLocaleString("pt-BR")}</span>
+                <button
+                  onClick={() => setEditing(p)}
+                  className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-secondary"
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Editar fotos
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Excluir este imóvel?")) {
+                      deleteProperty(p.id);
+                      toast.success("Imóvel excluído.");
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-md border px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                  aria-label="Excluir"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </li>
             ))}
           </ul>
         )}
+      </div>
+
+      {editing && (
+        <EditPhotosModal
+          property={editing}
+          onClose={() => setEditing(null)}
+          onSave={(imgs) => {
+            updateProperty(editing.id, {
+              images: imgs,
+              image: imgs[0] || editing.image || FALLBACK_IMG,
+            });
+            setEditing(null);
+            toast.success("Fotos atualizadas.");
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditPhotosModal({
+  property,
+  onClose,
+  onSave,
+}: {
+  property: Property;
+  onClose: () => void;
+  onSave: (images: string[]) => void;
+}) {
+  const [imgs, setImgs] = useState<string[]>(
+    property.images?.length ? property.images : property.image ? [property.image] : []
+  );
+  const [uploading, setUploading] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  const onPick = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const f of Array.from(files)) {
+        if (!f.type.startsWith("image/")) continue;
+        urls.push(await uploadWithFallback(f));
+      }
+      setImgs((a) => [...a, ...urls]);
+    } catch {
+      toast.error("Falha ao enviar imagens.");
+    } finally {
+      setUploading(false);
+      if (ref.current) ref.current.value = "";
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl rounded-xl border bg-card p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold">Editar fotos — {property.title}</h3>
+          <button onClick={onClose} aria-label="Fechar" className="rounded-md p-1 hover:bg-secondary">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {imgs.map((src, i) => (
+            <div key={i} className="relative aspect-square overflow-hidden rounded-md border bg-muted">
+              <img src={src} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setImgs((a) => a.filter((_, idx) => idx !== i))}
+                className="absolute top-1 right-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+                aria-label="Remover"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => ref.current?.click()}
+            disabled={uploading}
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed text-xs text-muted-foreground hover:bg-secondary disabled:opacity-50"
+          >
+            <ImagePlus className="h-5 w-5" />
+            {uploading ? "Enviando…" : "Adicionar"}
+          </button>
+        </div>
+        <input
+          ref={ref}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => onPick(e.target.files)}
+        />
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border px-3 py-2 text-sm hover:bg-secondary">
+            Cancelar
+          </button>
+          <button
+            onClick={() => onSave(imgs)}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Salvar alterações
+          </button>
+        </div>
       </div>
     </div>
   );
