@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { User, FileText, ArrowLeft } from "lucide-react";
+import { User, FileText, ArrowLeft, ShieldCheck, Upload, AlertCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 
+const TOTAL_STEPS = 4;
 
 type CriarContaSearch = {
   step?: number;
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/criar-conta")({
           ? parseInt(rawStep, 10) || 1
           : 1;
     return {
-      step: step >= 1 && step <= 3 ? step : 1,
+      step: step >= 1 && step <= TOTAL_STEPS ? step : 1,
       userType:
         search.userType === "tenant" || search.userType === "owner"
           ? search.userType
