@@ -45,6 +45,12 @@ function CriarConta() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Antifraud state (step 3)
+  const [docName, setDocName] = useState("");
+  const [hasDoc, setHasDoc] = useState(false);
+  const [hasSelfie, setHasSelfie] = useState(false);
+  const [fraudOk, setFraudOk] = useState(false);
+
   const handleContinueStep1 = () => {
     if (!userType) return;
     navigate({
@@ -82,15 +88,42 @@ function CriarConta() {
     });
   };
 
-  const handleContinueStep3 = async () => {
+  const handleValidateAntifraud = () => {
+    setError("");
+    if (!docName.trim()) {
+      setError("Digite o nome impresso no documento.");
+      return;
+    }
+    if (!hasDoc || !hasSelfie) {
+      setError("Envie o RG/CNH e a selfie para validação.");
+      return;
+    }
+    const match =
+      docName.trim().toLowerCase() === name.trim().toLowerCase() &&
+      name.trim().length > 2;
+    if (!match) {
+      setError(
+        "O nome do documento não confere com o nome cadastrado. Verifique e tente novamente."
+      );
+      setFraudOk(false);
+      return;
+    }
+    setFraudOk(true);
+    navigate({ to: "/criar-conta", search: { step: 4, userType } });
+  };
+
+  const handleContinueStep4 = async () => {
     if (!userType) return;
+    if (!fraudOk) {
+      setError("Conclua a validação do Antifraude antes de finalizar.");
+      navigate({ to: "/criar-conta", search: { step: 3, userType } });
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      // Simulate account creation + auto-login locally
       await new Promise((r) => setTimeout(r, 500));
       login({ name, email, role: userType });
-      // Redirect to role-appropriate area; header updates immediately
       navigate({ to: userType === "owner" ? "/proprietario" : "/inquilino" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta");
