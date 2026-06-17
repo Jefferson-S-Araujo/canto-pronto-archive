@@ -428,3 +428,30 @@ function Field({
     </label>
   );
 }
+
+function FileBox({
+  label,
+  checked,
+  onCheck,
+}: {
+  label: string;
+  checked: boolean;
+  onCheck: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onCheck}
+      className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-5 transition ${
+        checked
+          ? "border-success bg-success/5 text-success"
+          : "border-border hover:bg-secondary"
+      }`}
+    >
+      <Upload className="h-5 w-5" />
+      <span className="text-xs font-medium">
+        {checked ? `${label} ✓` : label}
+      </span>
+    </button>
+  );
+}
