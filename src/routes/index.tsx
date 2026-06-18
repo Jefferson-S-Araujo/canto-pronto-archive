@@ -45,7 +45,8 @@ function Index() {
                   Buscar imóveis <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  to="/cadastrar"
+                  to="/criar-conta"
+                  search={{ step: 1 }}
                   className="inline-flex items-center gap-2 rounded-md border px-5 py-3 text-sm font-semibold hover:bg-secondary"
                 >
                   Cadastrar agora
