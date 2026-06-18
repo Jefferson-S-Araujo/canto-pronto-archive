@@ -391,12 +391,19 @@ function CriarConta() {
                 <p className="text-xs font-medium text-muted-foreground">E-mail</p>
                 <p className="mt-1 text-sm font-semibold">{email}</p>
               </div>
-              <div className="flex items-center gap-2 text-success">
-                <ShieldCheck className="h-4 w-4" />
-                <span className="text-xs font-medium">
-                  Antifraude validado
-                </span>
-              </div>
+              {fraudOk ? (
+                <div className="flex items-center gap-2 text-success">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="text-xs font-medium">Antifraude validado</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-warning-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-xs font-medium">
+                    Documentos pendentes — algumas ações ficarão bloqueadas
+                  </span>
+                </div>
+              )}
             </div>
 
             {error && (
