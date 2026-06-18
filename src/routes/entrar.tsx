@@ -23,6 +23,7 @@ function resolveRedirect(searchRedirect?: string): string | undefined {
 }
 
 export const Route = createFileRoute("/entrar")({
+  ssr: false,
   validateSearch: (search: Record<string, unknown>): EntrarSearch => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
   }),
