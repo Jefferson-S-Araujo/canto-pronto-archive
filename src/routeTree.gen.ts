@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as QrRouteImport } from './routes/qr'
 import { Route as ProprietarioRouteImport } from './routes/proprietario'
 import { Route as InquilinoRouteImport } from './routes/inquilino'
@@ -24,6 +25,11 @@ import { Route as ContratoIdRouteImport } from './routes/contrato.$id'
 import { Route as ApiPublicSeedDemoAdminRouteImport } from './routes/api/public/seed-demo-admin'
 import { Route as ApiPublicAuthSignupRouteImport } from './routes/api/public/auth/signup'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QrRoute = QrRouteImport.update({
   id: '/qr',
   path: '/qr',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/inquilino': typeof InquilinoRoute
   '/proprietario': typeof ProprietarioRoute
   '/qr': typeof QrRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/contrato/$id': typeof ContratoIdRoute
   '/imovel/$id': typeof ImovelIdRoute
   '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/inquilino': typeof InquilinoRoute
   '/proprietario': typeof ProprietarioRoute
   '/qr': typeof QrRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/contrato/$id': typeof ContratoIdRoute
   '/imovel/$id': typeof ImovelIdRoute
   '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/inquilino': typeof InquilinoRoute
   '/proprietario': typeof ProprietarioRoute
   '/qr': typeof QrRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/contrato/$id': typeof ContratoIdRoute
   '/imovel/$id': typeof ImovelIdRoute
   '/api/public/seed-demo-admin': typeof ApiPublicSeedDemoAdminRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/inquilino'
     | '/proprietario'
     | '/qr'
+    | '/reset-password'
     | '/contrato/$id'
     | '/imovel/$id'
     | '/api/public/seed-demo-admin'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/inquilino'
     | '/proprietario'
     | '/qr'
+    | '/reset-password'
     | '/contrato/$id'
     | '/imovel/$id'
     | '/api/public/seed-demo-admin'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/inquilino'
     | '/proprietario'
     | '/qr'
+    | '/reset-password'
     | '/contrato/$id'
     | '/imovel/$id'
     | '/api/public/seed-demo-admin'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   InquilinoRoute: typeof InquilinoRoute
   ProprietarioRoute: typeof ProprietarioRoute
   QrRoute: typeof QrRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ContratoIdRoute: typeof ContratoIdRoute
   ImovelIdRoute: typeof ImovelIdRoute
   ApiPublicSeedDemoAdminRoute: typeof ApiPublicSeedDemoAdminRoute
@@ -214,6 +227,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qr': {
       id: '/qr'
       path: '/qr'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   InquilinoRoute: InquilinoRoute,
   ProprietarioRoute: ProprietarioRoute,
   QrRoute: QrRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ContratoIdRoute: ContratoIdRoute,
   ImovelIdRoute: ImovelIdRoute,
   ApiPublicSeedDemoAdminRoute: ApiPublicSeedDemoAdminRoute,

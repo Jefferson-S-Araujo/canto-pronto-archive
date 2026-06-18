@@ -30,6 +30,7 @@ export type User = {
   docStatus: "none" | "pending" | "approved" | "rejected";
   creditScore: number | null; // null = não enviou
   creditApproved: boolean;
+  docsVerified: boolean; // cadastro_completo — true só após envio dos documentos
 };
 
 
@@ -136,11 +137,12 @@ type Store = {
   disputes: Dispute[];
   // user actions
   setRole: (r: User["role"]) => void;
-  login: (data: { name: string; email: string; role: User["role"] }) => void;
+  login: (data: { name: string; email: string; role: User["role"]; docsVerified?: boolean }) => void;
   logout: () => void;
   submitDocs: (name: string, docName: string) => "match" | "mismatch";
   approveUser: (id: string) => void;
   uploadCredit: (score: number) => void;
+  setDocsVerified: (v: boolean) => void;
 
   // properties
   addProperty: (p: Omit<Property, "id" | "ownerId" | "certification" | "score">) => string;
@@ -171,6 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     docStatus: "none",
     creditScore: null,
     creditApproved: false,
+    docsVerified: false,
   });
 
   const [properties, setProperties] = useState<Property[]>(SAMPLE_PROPS);
@@ -185,8 +188,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     tickets,
     disputes,
     setRole: (r) => setUser((u) => ({ ...u, role: r })),
-    login: ({ name, email, role }) =>
-      setUser((u) => ({ ...u, name, email, role, isAuthenticated: true })),
+    login: ({ name, email, role, docsVerified }) =>
+      setUser((u) => ({
+        ...u,
+        name,
+        email,
+        role,
+        isAuthenticated: true,
+        docsVerified: docsVerified ?? u.docsVerified,
+      })),
     logout: () =>
       setUser({
         id: "u1",
@@ -196,16 +206,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         docStatus: "none",
         creditScore: null,
         creditApproved: false,
+        docsVerified: false,
       }),
 
     submitDocs: (name, docName) => {
       const match = name.trim().toLowerCase() === docName.trim().toLowerCase() && name.trim().length > 2;
-      setUser((u) => ({ ...u, name, docStatus: match ? "pending" : "rejected" }));
+      setUser((u) => ({ ...u, name, docStatus: match ? "pending" : "rejected", docsVerified: match ? true : u.docsVerified }));
       return match ? "match" : "mismatch";
     },
-    approveUser: () => setUser((u) => ({ ...u, docStatus: "approved" })),
+    approveUser: () => setUser((u) => ({ ...u, docStatus: "approved", docsVerified: true })),
     uploadCredit: (score) =>
       setUser((u) => ({ ...u, creditScore: score, creditApproved: score >= 700 })),
+    setDocsVerified: (v) => setUser((u) => ({ ...u, docsVerified: v })),
     addProperty: (p) => {
       const id = "p" + (properties.length + 1) + Date.now();
       setProperties((arr) => [
