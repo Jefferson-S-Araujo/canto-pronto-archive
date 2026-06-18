@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { User, FileText, ArrowLeft, ShieldCheck, Upload, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { assignMyRole } from "@/lib/signup.functions";
 
 const TOTAL_STEPS = 4;
 
