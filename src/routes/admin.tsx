@@ -284,7 +284,8 @@ function Admin() {
           </div>
         )}
 
-        {tab === "aprovacoes" && <AprovacoesPanel />}
+        {tab === "inquilinos" && <UsersPanel role="tenant" />}
+        {tab === "proprietarios" && <UsersPanel role="owner" />}
         {tab === "contratos" && <ContratosPanel />}
         {tab === "visitas" && <VisitasPanel />}
         {tab === "suporte" && <SuportePanel />}
