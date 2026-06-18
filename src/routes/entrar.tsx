@@ -61,6 +61,7 @@ function Entrar() {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   // Demo info only — no backend call in mock mode
   useEffect(() => {
