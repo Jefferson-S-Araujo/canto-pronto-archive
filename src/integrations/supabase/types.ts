@@ -171,6 +171,7 @@ export type Database = {
           description: string
           id: string
           image: string
+          images: string[]
           neighborhood: string
           owner_id: string
           price: number
@@ -191,6 +192,7 @@ export type Database = {
           description?: string
           id?: string
           image?: string
+          images?: string[]
           neighborhood: string
           owner_id: string
           price: number
@@ -211,6 +213,7 @@ export type Database = {
           description?: string
           id?: string
           image?: string
+          images?: string[]
           neighborhood?: string
           owner_id?: string
           price?: number
