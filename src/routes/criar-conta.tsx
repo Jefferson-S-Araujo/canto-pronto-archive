@@ -114,22 +114,23 @@ function CriarConta() {
 
   const handleContinueStep4 = async () => {
     if (!userType) return;
-    if (!fraudOk) {
-      setError("Conclua a validação do Antifraude antes de finalizar.");
-      navigate({ to: "/criar-conta", search: { step: 3, userType } });
-      return;
-    }
     setError("");
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 500));
-      login({ name, email, role: userType });
+      login({ name, email, role: userType, docsVerified: fraudOk });
       navigate({ to: userType === "owner" ? "/proprietario" : "/inquilino" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSkipDocs = () => {
+    setError("");
+    setFraudOk(false);
+    navigate({ to: "/criar-conta", search: { step: 4, userType } });
   };
 
 
@@ -351,6 +352,16 @@ function CriarConta() {
               >
                 Validar e Continuar
               </button>
+              <button
+                type="button"
+                onClick={handleSkipDocs}
+                className="w-full rounded-md border py-2.5 text-sm font-semibold hover:bg-secondary"
+              >
+                Pular por enquanto
+              </button>
+              <p className="text-xs text-muted-foreground text-center">
+                Você poderá enviar os documentos depois, mas algumas funções (alugar, conversar) ficarão bloqueadas até a verificação.
+              </p>
             </div>
           </>
         )}
@@ -380,12 +391,19 @@ function CriarConta() {
                 <p className="text-xs font-medium text-muted-foreground">E-mail</p>
                 <p className="mt-1 text-sm font-semibold">{email}</p>
               </div>
-              <div className="flex items-center gap-2 text-success">
-                <ShieldCheck className="h-4 w-4" />
-                <span className="text-xs font-medium">
-                  Antifraude validado
-                </span>
-              </div>
+              {fraudOk ? (
+                <div className="flex items-center gap-2 text-success">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="text-xs font-medium">Antifraude validado</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-warning-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-xs font-medium">
+                    Documentos pendentes — algumas ações ficarão bloqueadas
+                  </span>
+                </div>
+              )}
             </div>
 
             {error && (

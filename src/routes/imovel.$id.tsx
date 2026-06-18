@@ -5,8 +5,10 @@ import { getPropertyById } from "@/lib/properties.api";
 import { getMyPassport } from "@/lib/tenant.api";
 import { createProposal } from "@/lib/proposals.api";
 import { CertBadge, ScoreBadge } from "@/components/Badges";
-import { Bed, Bath, Maximize2, MapPin, Wifi, Calendar, Send, Loader2 } from "lucide-react";
+import { Bed, Bath, Maximize2, MapPin, Wifi, Calendar, Send, Loader2, Lock, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/imovel/$id")({
   component: Detail,
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/imovel/$id")({
 function Detail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const { user } = useStore();
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -82,7 +85,23 @@ function Detail() {
       navigate({ to: "/entrar", search: { redirect: `/imovel/${p.id}` } });
       return;
     }
+    if (!user.docsVerified) {
+      toast.error("Ação bloqueada. Você precisa enviar seus documentos para alugar um imóvel.");
+      return;
+    }
     proposalMut.mutate();
+  };
+
+  const handleChat = () => {
+    if (authed === false) {
+      navigate({ to: "/entrar", search: { redirect: `/imovel/${p.id}` } });
+      return;
+    }
+    if (!user.docsVerified) {
+      toast.error("Ação bloqueada. Você precisa enviar seus documentos para conversar com o proprietário.");
+      return;
+    }
+    toast.success("Chat em breve. Você está liberado para conversar!");
   };
 
   return (
@@ -145,20 +164,34 @@ function Detail() {
           <button
             onClick={handleProposal}
             disabled={proposalMut.isPending}
+            title={authed && !user.docsVerified ? "Envie seus documentos para liberar" : undefined}
             className="w-full rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:opacity-95 inline-flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <Send className="h-4 w-4" /> {proposalMut.isPending ? "Enviando..." : "Fazer Proposta"}
+            {authed && !user.docsVerified ? <Lock className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+            {proposalMut.isPending ? "Enviando..." : "Fazer Proposta"}
           </button>
           {proposalMut.isError && (
             <p className="text-xs text-destructive">{(proposalMut.error as Error).message}</p>
           )}
+          <button
+            onClick={handleChat}
+            className="w-full rounded-md border px-4 py-3 text-sm font-semibold hover:bg-secondary inline-flex items-center justify-center gap-2"
+          >
+            {authed && !user.docsVerified ? <Lock className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+            Conversar com o proprietário
+          </button>
           <button
             onClick={() => setScheduled(true)}
             className="w-full rounded-md border px-4 py-3 text-sm font-semibold hover:bg-secondary inline-flex items-center justify-center gap-2"
           >
             <Calendar className="h-4 w-4" /> {scheduled ? "Visita agendada ✓" : "Agendar Visita"}
           </button>
-          {authed && !creditApproved && (
+          {authed && !user.docsVerified && (
+            <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              🔒 Envie seus documentos no <Link to="/cadastrar" className="font-semibold underline">cadastro</Link> para liberar aluguel e chat.
+            </p>
+          )}
+          {authed && user.docsVerified && !creditApproved && (
             <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
               💡 Envie seu Passaporte do Inquilino no <Link to="/inquilino" className="font-semibold underline">dashboard</Link> para eliminar a caução adicional.
             </p>
