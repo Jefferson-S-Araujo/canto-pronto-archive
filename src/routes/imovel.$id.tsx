@@ -164,20 +164,34 @@ function Detail() {
           <button
             onClick={handleProposal}
             disabled={proposalMut.isPending}
+            title={authed && !user.docsVerified ? "Envie seus documentos para liberar" : undefined}
             className="w-full rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:opacity-95 inline-flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <Send className="h-4 w-4" /> {proposalMut.isPending ? "Enviando..." : "Fazer Proposta"}
+            {authed && !user.docsVerified ? <Lock className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+            {proposalMut.isPending ? "Enviando..." : "Fazer Proposta"}
           </button>
           {proposalMut.isError && (
             <p className="text-xs text-destructive">{(proposalMut.error as Error).message}</p>
           )}
+          <button
+            onClick={handleChat}
+            className="w-full rounded-md border px-4 py-3 text-sm font-semibold hover:bg-secondary inline-flex items-center justify-center gap-2"
+          >
+            {authed && !user.docsVerified ? <Lock className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+            Conversar com o proprietário
+          </button>
           <button
             onClick={() => setScheduled(true)}
             className="w-full rounded-md border px-4 py-3 text-sm font-semibold hover:bg-secondary inline-flex items-center justify-center gap-2"
           >
             <Calendar className="h-4 w-4" /> {scheduled ? "Visita agendada ✓" : "Agendar Visita"}
           </button>
-          {authed && !creditApproved && (
+          {authed && !user.docsVerified && (
+            <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              🔒 Envie seus documentos no <Link to="/cadastrar" className="font-semibold underline">cadastro</Link> para liberar aluguel e chat.
+            </p>
+          )}
+          {authed && user.docsVerified && !creditApproved && (
             <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
               💡 Envie seu Passaporte do Inquilino no <Link to="/inquilino" className="font-semibold underline">dashboard</Link> para eliminar a caução adicional.
             </p>
