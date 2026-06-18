@@ -5,8 +5,10 @@ import { getPropertyById } from "@/lib/properties.api";
 import { getMyPassport } from "@/lib/tenant.api";
 import { createProposal } from "@/lib/proposals.api";
 import { CertBadge, ScoreBadge } from "@/components/Badges";
-import { Bed, Bath, Maximize2, MapPin, Wifi, Calendar, Send, Loader2 } from "lucide-react";
+import { Bed, Bath, Maximize2, MapPin, Wifi, Calendar, Send, Loader2, Lock, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/imovel/$id")({
   component: Detail,
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/imovel/$id")({
 function Detail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const { user } = useStore();
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -82,7 +85,23 @@ function Detail() {
       navigate({ to: "/entrar", search: { redirect: `/imovel/${p.id}` } });
       return;
     }
+    if (!user.docsVerified) {
+      toast.error("Ação bloqueada. Você precisa enviar seus documentos para alugar um imóvel.");
+      return;
+    }
     proposalMut.mutate();
+  };
+
+  const handleChat = () => {
+    if (authed === false) {
+      navigate({ to: "/entrar", search: { redirect: `/imovel/${p.id}` } });
+      return;
+    }
+    if (!user.docsVerified) {
+      toast.error("Ação bloqueada. Você precisa enviar seus documentos para conversar com o proprietário.");
+      return;
+    }
+    toast.success("Chat em breve. Você está liberado para conversar!");
   };
 
   return (
