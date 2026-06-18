@@ -111,6 +111,12 @@ function Admin() {
       </div>
 
       <nav className="mt-6 flex gap-1 border-b overflow-x-auto">
+        <TabBtn active={tab === "inquilinos"} onClick={() => setTab("inquilinos")}>
+          <Users className="mr-1 inline h-3.5 w-3.5" /> Inquilinos
+        </TabBtn>
+        <TabBtn active={tab === "proprietarios"} onClick={() => setTab("proprietarios")}>
+          <Home className="mr-1 inline h-3.5 w-3.5" /> Proprietários
+        </TabBtn>
         <TabBtn active={tab === "passports"} onClick={() => setTab("passports")}>
           Passaportes ({passports.length})
         </TabBtn>
@@ -123,7 +129,6 @@ function Admin() {
         <TabBtn active={tab === "disputes"} onClick={() => setTab("disputes")}>
           Disputas ({disputes.filter((d) => d.status !== "resolvida").length})
         </TabBtn>
-        <TabBtn active={tab === "aprovacoes"} onClick={() => setTab("aprovacoes")}>Aprovação de Cadastros</TabBtn>
         <TabBtn active={tab === "contratos"} onClick={() => setTab("contratos")}>Contratos</TabBtn>
         <TabBtn active={tab === "visitas"} onClick={() => setTab("visitas")}>Visitas</TabBtn>
         <TabBtn active={tab === "suporte"} onClick={() => setTab("suporte")}>Suporte</TabBtn>
