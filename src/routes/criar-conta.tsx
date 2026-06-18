@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { User, FileText, ArrowLeft, ShieldCheck, Upload, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { assignMyRole } from "@/lib/signup.functions";
 
 const TOTAL_STEPS = 4;
 
@@ -33,6 +37,7 @@ export const Route = createFileRoute("/criar-conta")({
 function CriarConta() {
   const navigate = useNavigate();
   const { login } = useStore();
+  const assignRole = useServerFn(assignMyRole);
   const { step = 1, userType: queryUserType } = Route.useSearch();
 
   const [userType, setUserType] = useState<"tenant" | "owner" | null>(
@@ -117,15 +122,52 @@ function CriarConta() {
     setError("");
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 500));
+      const { data, error: signUpErr } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + "/entrar",
+          data: { name, role: userType },
+        },
+      });
+      if (signUpErr) throw signUpErr;
+
+      // If email confirmation is required, there is no session yet.
+      const hasSession = !!data.session;
+      if (!hasSession) {
+        // Try password sign-in (works when "Confirm email" is disabled).
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInErr) {
+          toast.success(
+            "Conta criada! Verifique seu e-mail para confirmar o acesso.",
+          );
+          navigate({ to: "/entrar" });
+          return;
+        }
+      }
+
+      // Assign the chosen role server-side (admin client, RLS-safe).
+      try {
+        await assignRole({ data: { role: userType } });
+      } catch (e) {
+        console.error("Falha ao atribuir role:", e);
+      }
+
       login({ name, email, role: userType, docsVerified: fraudOk });
+      toast.success("Conta criada com sucesso!");
       navigate({ to: userType === "owner" ? "/proprietario" : "/inquilino" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar conta");
+      const msg = err instanceof Error ? err.message : "Erro ao criar conta";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleSkipDocs = () => {
     setError("");
