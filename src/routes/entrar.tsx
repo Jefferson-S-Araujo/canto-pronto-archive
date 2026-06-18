@@ -58,6 +58,9 @@ function Entrar() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [seedMsg, setSeedMsg] = useState<string>("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   // Demo info only — no backend call in mock mode
   useEffect(() => {
@@ -162,6 +165,13 @@ function Entrar() {
         <form className="space-y-4" onSubmit={onSubmit}>
           <Field label="E-mail" type="email" placeholder="voce@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Field label="Senha" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+          <button
+            type="button"
+            onClick={() => { setForgotEmail(email); setShowForgot(true); }}
+            className="text-xs text-primary hover:underline -mt-2"
+          >
+            Esqueci minha senha
+          </button>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <button
             type="submit"
@@ -172,6 +182,54 @@ function Entrar() {
             {loading ? "Carregando..." : "Entrar"}
           </button>
         </form>
+
+        {showForgot && (
+          <div className="mt-4 rounded-md border bg-muted/30 p-4 space-y-3">
+            <p className="text-sm font-medium">Recuperar senha</p>
+            <p className="text-xs text-muted-foreground">
+              Enviaremos um link de recuperação para o seu e-mail.
+            </p>
+            <input
+              type="email"
+              placeholder="voce@email.com"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={forgotLoading || !forgotEmail}
+                onClick={async () => {
+                  setForgotLoading(true);
+                  try {
+                    const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+                      redirectTo: window.location.origin + "/reset-password",
+                    });
+                    if (err) throw err;
+                    toast.success("Link de recuperação enviado! Verifique seu e-mail.");
+                    setShowForgot(false);
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : "Falha ao enviar e-mail";
+                    toast.error(msg);
+                  } finally {
+                    setForgotLoading(false);
+                  }
+                }}
+                className="flex-1 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60"
+              >
+                {forgotLoading ? "Enviando..." : "Enviar link"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForgot(false)}
+                className="rounded-md border px-3 py-2 text-sm hover:bg-secondary"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         <button
           type="button"
