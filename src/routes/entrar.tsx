@@ -57,47 +57,26 @@ function Entrar() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [seedMsg, setSeedMsg] = useState<string>("");
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  // Demo info only — no backend call in mock mode
-  useEffect(() => {
-    setSeedMsg("Use o cadastro para simular login (mock).");
-  }, []);
-
   const routeForRoles = (roles: string[]) =>
     roles.includes("admin") ? "/admin" : roles.includes("owner") ? "/proprietario" : "/inquilino";
-
-  // Demo admin fallback — used quando o Supabase está indisponível ou
-  // as variáveis de ambiente não estão configuradas. Estritamente local.
-  const DEMO_ADMIN = { email: "admin@cantopronto.com", password: "admin123" };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
-    const isDemoAdmin =
-      email.trim().toLowerCase() === DEMO_ADMIN.email && password === DEMO_ADMIN.password;
-
     try {
       const { error: signErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signErr) throw signErr;
       try { await ensureRole({ data: undefined as never }); } catch { /* ignore */ }
       let roles: string[] = [];
       try { roles = (await fetchRoles()).roles; } catch { /* ignore */ }
-      if (isDemoAdmin && !roles.includes("admin")) roles = ["admin"];
       const target = redirect || routeForRoles(roles);
       navigate({ to: target as never });
     } catch (err) {
-      // Fallback local para o admin demo quando o backend falha
-      if (isDemoAdmin) {
-        toast.success("Login local (fallback) — admin demo");
-        navigate({ to: (redirect as never) || "/admin" });
-        return;
-      }
       const message = err instanceof Error ? err.message : "Falha ao entrar";
       setError(message);
       toast.error(message);
