@@ -218,11 +218,6 @@ function Entrar() {
           Não tem conta? Criar conta
         </button>
 
-        {seedMsg && (
-          <div className="mt-6 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-            <span className="font-semibold">Conta demo:</span> {seedMsg}
-          </div>
-        )}
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           <Link to="/" className="hover:underline">Voltar ao início</Link>
