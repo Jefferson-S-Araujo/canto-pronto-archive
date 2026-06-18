@@ -112,24 +112,21 @@ const BUCKET = "property-images";
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80";
 
-async function ensureBucket() {
-  try {
-    await supabase.storage.createBucket(BUCKET, { public: true });
-  } catch {
-    // ignore — bucket may already exist or anon may not be allowed; upload will still work if it exists
-  }
-}
-
 async function uploadImage(file: File): Promise<string> {
-  await ensureBucket();
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !userData.user) throw new Error("Usuário não autenticado.");
+  const uid = userData.user.id;
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
     upsert: false,
     contentType: file.type || "image/jpeg",
   });
-  if (error) throw error;
+  if (error) {
+    console.warn("[upload] falhou no Storage, usando fallback local:", error.message);
+    throw error;
+  }
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
