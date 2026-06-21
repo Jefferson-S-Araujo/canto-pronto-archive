@@ -47,14 +47,42 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
   const { user } = useStore();
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>("financeiro");
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    if (!user?.isAuthenticated) {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
+      setSessionUserId(data.user?.id ?? null);
+      setSessionEmail(data.user?.email ?? null);
+      setSessionReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setSessionUserId(session?.user?.id ?? null);
+      setSessionEmail(session?.user?.email ?? null);
+      setSessionReady(true);
+    });
+    return () => { mounted = false; subscription.unsubscribe(); };
+  }, []);
+
+  const isAuthenticated = !!sessionUserId || !!user?.isAuthenticated;
+
+  useEffect(() => {
+    if (sessionReady && !isAuthenticated) {
       navigate({ to: "/entrar" });
     }
-  }, [user?.isAuthenticated, navigate]);
+  }, [sessionReady, isAuthenticated, navigate]);
 
-  if (!user?.isAuthenticated) return null;
+  if (!sessionReady) {
+    return (
+      <main className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">
+        Carregando sessão...
+      </main>
+    );
+  }
+  if (!isAuthenticated) return null;
 
   const title = role === "owner" ? "Painel do Proprietário" : "Painel do Inquilino";
 
