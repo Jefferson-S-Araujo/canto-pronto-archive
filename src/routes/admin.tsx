@@ -134,6 +134,9 @@ function Admin() {
         <TabBtn active={tab === "visitas"} onClick={() => setTab("visitas")}>Visitas</TabBtn>
         <TabBtn active={tab === "suporte"} onClick={() => setTab("suporte")}>Suporte</TabBtn>
         <TabBtn active={tab === "seguranca"} onClick={() => setTab("seguranca")}>Segurança</TabBtn>
+        <TabBtn active={tab === "demo"} onClick={() => setTab("demo")}>
+          <Sparkles className="mr-1 inline h-3.5 w-3.5" /> Demo
+        </TabBtn>
       </nav>
 
       <div className="mt-6">
