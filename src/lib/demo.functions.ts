@@ -77,7 +77,7 @@ export const seedDemoProperties = createServerFn({ method: "POST" })
       owner_id: userId,
       certification: "parede_seca" as const,
       score: 95,
-      status: "active" as const,
+      status: "published" as const,
       is_demo: true,
     }));
 
