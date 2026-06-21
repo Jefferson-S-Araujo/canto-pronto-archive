@@ -16,8 +16,9 @@ import {
 import { listAllTickets } from "@/lib/tickets.api";
 import { listDisputes, resolveDispute, setDisputeMediating } from "@/lib/disputes.api";
 import { TicketThread } from "@/components/TicketThread";
-import { ShieldCheck, Gavel, UserCheck, XCircle, FileText, Loader2, Wrench, KeyRound, Receipt, CalendarClock, LifeBuoy, Check, X, Eye, Download, Users, Home } from "lucide-react";
+import { ShieldCheck, Gavel, UserCheck, XCircle, FileText, Loader2, Wrench, KeyRound, Receipt, CalendarClock, LifeBuoy, Check, X, Eye, Download, Users, Home, Sparkles, AlertTriangle, Pencil, Trash2, FileSignature, Save } from "lucide-react";
 import { listUsersByRole, type AdminUserRow } from "@/lib/admin-users.functions";
+import { seedDemoProperties, listDemoProperties, updateDemoProperty, deleteDemoProperty, simulateDemoContract, listDemoContracts } from "@/lib/demo.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
