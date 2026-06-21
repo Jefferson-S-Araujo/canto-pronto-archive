@@ -653,3 +653,311 @@ function DocBadge({ status }: { status: AdminUserRow["doc_status"] }) {
   return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${m.cls}`}>{m.label}</span>;
 }
 
+
+// ============ Demo Panel ============
+function DemoBanner() {
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-xl border-2 border-amber-400 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/10 dark:text-amber-200">
+      <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+      <div>
+        <p className="font-bold">É somente uma demonstração</p>
+        <p className="text-xs opacity-80">
+          Esses imóveis e contratos são fictícios. Edições, simulações de assinatura e contratos gerados aqui não representam operações reais.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+type DemoProp = {
+  id: string;
+  title: string;
+  neighborhood: string;
+  address: string;
+  price: number | string;
+  deposit: number | string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  image: string;
+};
+
+function DemoPanel() {
+  const qc = useQueryClient();
+  const seed = useServerFn(seedDemoProperties);
+  const list = useServerFn(listDemoProperties);
+  const upd = useServerFn(updateDemoProperty);
+  const del = useServerFn(deleteDemoProperty);
+  const sim = useServerFn(simulateDemoContract);
+  const listContracts = useServerFn(listDemoContracts);
+
+  const props = useQuery({
+    queryKey: ["admin", "demo", "properties"],
+    queryFn: () => list(),
+  });
+  const contracts = useQuery({
+    queryKey: ["admin", "demo", "contracts"],
+    queryFn: () => listContracts(),
+  });
+
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<DemoProp>>({});
+
+  const seedMut = useMutation({
+    mutationFn: () => seed(),
+    onSuccess: (r) => {
+      toast.success(r.inserted > 0 ? `${r.inserted} imóveis demo criados.` : "Imóveis demo já existiam.");
+      qc.invalidateQueries({ queryKey: ["admin", "demo"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const updMut = useMutation({
+    mutationFn: (vars: { id: string; patch: Record<string, unknown> }) =>
+      upd({ data: { id: vars.id, patch: vars.patch as never } }),
+    onSuccess: () => {
+      toast.success("Imóvel demo atualizado — É somente uma demonstração.");
+      setEditId(null);
+      qc.invalidateQueries({ queryKey: ["admin", "demo", "properties"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const delMut = useMutation({
+    mutationFn: (id: string) => del({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Imóvel demo removido.");
+      qc.invalidateQueries({ queryKey: ["admin", "demo"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const simMut = useMutation({
+    mutationFn: (property_id: string) => sim({ data: { property_id } }),
+    onSuccess: () => {
+      toast.success("Contrato demo criado e 'assinado' — É somente uma demonstração.");
+      qc.invalidateQueries({ queryKey: ["admin", "demo", "contracts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function startEdit(p: DemoProp) {
+    setEditId(p.id);
+    setDraft({
+      title: p.title,
+      neighborhood: p.neighborhood,
+      address: p.address,
+      price: Number(p.price),
+      deposit: Number(p.deposit),
+      bedrooms: p.bedrooms,
+      bathrooms: p.bathrooms,
+      area: p.area,
+    });
+    toast("É somente uma demonstração", { description: "Edições aqui não afetam imóveis reais." });
+  }
+
+  function saveEdit() {
+    if (!editId) return;
+    updMut.mutate({
+      id: editId,
+      patch: {
+        title: draft.title,
+        neighborhood: draft.neighborhood,
+        address: draft.address,
+        price: Number(draft.price),
+        deposit: Number(draft.deposit),
+        bedrooms: Number(draft.bedrooms),
+        bathrooms: Number(draft.bathrooms),
+        area: Number(draft.area),
+      },
+    });
+  }
+
+  const rows = (props.data ?? []) as DemoProp[];
+  const ctrs = (contracts.data ?? []) as Array<{
+    id: string;
+    proposal_id: string;
+    signed_by_tenant_at: string | null;
+    proposals: { property_snapshot: { title?: string; neighborhood?: string }; monthly_price: number };
+  }>;
+
+  return (
+    <div>
+      <DemoBanner />
+
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Imóveis de demonstração</h3>
+        </div>
+        <button
+          onClick={() => seedMut.mutate()}
+          disabled={seedMut.isPending}
+          className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+        >
+          {seedMut.isPending ? "Criando..." : "Criar imóveis demo"}
+        </button>
+      </div>
+
+      {props.isLoading ? (
+        <Loading />
+      ) : rows.length === 0 ? (
+        <Empty msg='Nenhum imóvel demo. Clique em "Criar imóveis demo" para popular.' />
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {rows.map((p) => {
+            const isEditing = editId === p.id;
+            return (
+              <div key={p.id} className="rounded-xl border bg-card p-4">
+                <div className="flex gap-3">
+                  <img src={p.image} alt={p.title} className="h-20 w-20 flex-shrink-0 rounded-md object-cover" />
+                  <div className="min-w-0 flex-1">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <input
+                          value={draft.title ?? ""}
+                          onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                          className="w-full rounded border bg-background px-2 py-1 text-sm font-semibold"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={draft.neighborhood ?? ""}
+                            onChange={(e) => setDraft({ ...draft, neighborhood: e.target.value })}
+                            placeholder="Bairro"
+                            className="rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <input
+                            type="number"
+                            value={String(draft.price ?? "")}
+                            onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
+                            placeholder="Aluguel"
+                            className="rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <input
+                            type="number"
+                            value={String(draft.deposit ?? "")}
+                            onChange={(e) => setDraft({ ...draft, deposit: Number(e.target.value) })}
+                            placeholder="Caução"
+                            className="rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <input
+                            type="number"
+                            value={String(draft.area ?? "")}
+                            onChange={(e) => setDraft({ ...draft, area: Number(e.target.value) })}
+                            placeholder="m²"
+                            className="rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <input
+                            type="number"
+                            value={String(draft.bedrooms ?? "")}
+                            onChange={(e) => setDraft({ ...draft, bedrooms: Number(e.target.value) })}
+                            placeholder="Quartos"
+                            className="rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <input
+                            type="number"
+                            value={String(draft.bathrooms ?? "")}
+                            onChange={(e) => setDraft({ ...draft, bathrooms: Number(e.target.value) })}
+                            placeholder="Banheiros"
+                            className="rounded border bg-background px-2 py-1 text-xs"
+                          />
+                        </div>
+                        <input
+                          value={draft.address ?? ""}
+                          onChange={(e) => setDraft({ ...draft, address: e.target.value })}
+                          placeholder="Endereço"
+                          className="w-full rounded border bg-background px-2 py-1 text-xs"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <p className="truncate font-semibold">{p.title}</p>
+                        <p className="text-xs text-muted-foreground">{p.neighborhood} · {p.area}m² · {p.bedrooms}q/{p.bathrooms}b</p>
+                        <p className="mt-1 text-sm font-medium text-primary">
+                          R$ {Number(p.price).toLocaleString("pt-BR")}/mês
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={saveEdit}
+                        disabled={updMut.isPending}
+                        className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+                      >
+                        <Save className="h-3.5 w-3.5" /> Salvar
+                      </button>
+                      <button
+                        onClick={() => setEditId(null)}
+                        className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => startEdit(p)}
+                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          toast("É somente uma demonstração", { description: "Gerando contrato fictício..." });
+                          simMut.mutate(p.id);
+                        }}
+                        disabled={simMut.isPending}
+                        className="inline-flex items-center gap-1 rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-success-foreground disabled:opacity-60"
+                      >
+                        <FileSignature className="h-3.5 w-3.5" /> Simular contrato
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("Remover este imóvel demo?")) delMut.mutate(p.id);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Remover
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-8">
+        <div className="mb-3 flex items-center gap-2">
+          <FileSignature className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Contratos demo assinados ({ctrs.length})</h3>
+        </div>
+        {ctrs.length === 0 ? (
+          <Empty msg="Nenhum contrato demo ainda. Use 'Simular contrato' acima." />
+        ) : (
+          <div className="space-y-2">
+            {ctrs.map((c) => (
+              <div key={c.id} className="flex items-center justify-between rounded-lg border bg-card p-3 text-sm">
+                <div>
+                  <p className="font-medium">{c.proposals.property_snapshot.title ?? "Imóvel demo"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {c.proposals.property_snapshot.neighborhood ?? "—"} · R$ {Number(c.proposals.monthly_price).toLocaleString("pt-BR")}/mês
+                  </p>
+                </div>
+                <div className="text-right text-xs">
+                  <span className="rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success">Assinado</span>
+                  <p className="mt-1 text-muted-foreground">
+                    {c.signed_by_tenant_at ? new Date(c.signed_by_tenant_at).toLocaleString("pt-BR") : "—"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
