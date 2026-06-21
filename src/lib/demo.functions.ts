@@ -75,7 +75,7 @@ export const seedDemoProperties = createServerFn({ method: "POST" })
     const rows = DEMO_SEED.map((p) => ({
       ...p,
       owner_id: userId,
-      certification: "verified" as const,
+      certification: "parede_seca" as const,
       score: 95,
       status: "active" as const,
       is_demo: true,
