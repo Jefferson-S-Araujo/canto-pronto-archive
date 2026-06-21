@@ -294,6 +294,7 @@ function Admin() {
         {tab === "visitas" && <VisitasPanel />}
         {tab === "suporte" && <SuportePanel />}
         {tab === "seguranca" && <SegurancaPanel />}
+        {tab === "demo" && <DemoPanel />}
       </div>
     </main>
   );
