@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           generated_at: string
           id: string
+          is_demo: boolean
           pdf_hash: string
           pdf_path: string
           proposal_id: string
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string
           generated_at?: string
           id?: string
+          is_demo?: boolean
           pdf_hash: string
           pdf_path: string
           proposal_id: string
@@ -45,6 +47,7 @@ export type Database = {
           created_at?: string
           generated_at?: string
           id?: string
+          is_demo?: boolean
           pdf_hash?: string
           pdf_path?: string
           proposal_id?: string
@@ -172,6 +175,7 @@ export type Database = {
           id: string
           image: string
           images: string[]
+          is_demo: boolean
           neighborhood: string
           owner_id: string
           price: number
@@ -193,6 +197,7 @@ export type Database = {
           id?: string
           image?: string
           images?: string[]
+          is_demo?: boolean
           neighborhood: string
           owner_id: string
           price: number
@@ -214,6 +219,7 @@ export type Database = {
           id?: string
           image?: string
           images?: string[]
+          is_demo?: boolean
           neighborhood?: string
           owner_id?: string
           price?: number
@@ -233,6 +239,7 @@ export type Database = {
           escrow_amount: number
           extra_deposit: number
           id: string
+          is_demo: boolean
           monthly_price: number
           owner_id: string
           property_id: string
@@ -250,6 +257,7 @@ export type Database = {
           escrow_amount?: number
           extra_deposit?: number
           id?: string
+          is_demo?: boolean
           monthly_price?: number
           owner_id: string
           property_id: string
@@ -267,6 +275,7 @@ export type Database = {
           escrow_amount?: number
           extra_deposit?: number
           id?: string
+          is_demo?: boolean
           monthly_price?: number
           owner_id?: string
           property_id?: string
