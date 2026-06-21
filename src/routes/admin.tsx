@@ -48,7 +48,7 @@ export const Route = createFileRoute("/admin")({
 
 function Admin() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte" | "aprovacoes" | "inquilinos" | "proprietarios">("inquilinos");
+  const [tab, setTab] = useState<"passports" | "proposals" | "tickets" | "disputes" | "seguranca" | "contratos" | "visitas" | "suporte" | "aprovacoes" | "inquilinos" | "proprietarios" | "demo">("inquilinos");
 
   const safe = <T,>(fn: () => Promise<T>, fallback: T) => async () => {
     try { return await fn(); } catch { return fallback; }
