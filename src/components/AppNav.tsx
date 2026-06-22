@@ -36,12 +36,17 @@ export function AppNav() {
       setSessionEmail(data.user?.email ?? null);
       setSessionReady(true);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_e, session) => {
       setSessionUserId(session?.user?.id ?? null);
       setSessionEmail(session?.user?.email ?? null);
       setSessionReady(true);
     });
-    return () => { mounted = false; subscription.unsubscribe(); };
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch real roles from DB whenever signed in
@@ -68,17 +73,29 @@ export function AppNav() {
   console.log("Auth state:", { sessionUserId, sessionEmail, realRoles, role });
 
   const links: NavLink[] = [...PUBLIC_LINKS];
-  if (isAuthenticated && role) {
-    if (role === "tenant") links.push(TENANT_LINK);
-    else if (role === "owner") links.push(OWNER_LINK);
-    else if (role === "admin") links.push(TENANT_LINK, OWNER_LINK, ADMIN_LINK);
+
+  // CORREÇÃO: Se estiver autenticado, garante o link de Proprietário visível para evitar sumiço
+  if (isAuthenticated) {
+    if (role === "admin") {
+      links.push(TENANT_LINK, OWNER_LINK, ADMIN_LINK);
+    } else if (role === "tenant") {
+      links.push(TENANT_LINK, OWNER_LINK); // Deixa proprietário visível como atalho
+    } else {
+      // Por padrão, exibe Proprietário para evitar loops enquanto as roles carregam
+      links.push(OWNER_LINK);
+    }
   }
 
   const handleLogout = async () => {
-    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
     mockLogout();
     qc.clear();
-    navigate({ to: "/" });
+    // Força recarregamento completo para limpar estados residuais do navegador
+    window.location.href = "/";
   };
 
   const displayName = sessionEmail || mockUser?.name || "";
@@ -121,17 +138,26 @@ export function AppNav() {
             <QrCode className="h-4 w-4" /> Celular
           </Link>
           {isAuthenticated && sessionReady ? (
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary"
-              title={displayName}
-            >
-              <LogOut className="h-4 w-4" /> Sair
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Botão extra de perfil/painel rápido para garantir navegação */}
+              <Link
+                to="/proprietario"
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 text-primary px-3 py-2 text-sm font-medium hover:bg-primary/20 transition-colors"
+              >
+                <User className="h-4 w-4" /> Painel
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary text-destructive"
+                title={displayName}
+              >
+                <LogOut className="h-4 w-4" /> Sair
+              </button>
+            </div>
           ) : (
             <Link
               to="/entrar"
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary"
+              className="inline-flex items-center gap-1.5 rounded-md border bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:opacity-90"
             >
               <LogIn className="h-4 w-4" /> Entrar
             </Link>
@@ -140,10 +166,7 @@ export function AppNav() {
       </div>
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur">
-        <div
-          className="grid"
-          style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
-        >
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}>
           {links.map((l) => {
             const Icon = l.icon;
             const active = path === l.to || (l.to !== "/" && path.startsWith(l.to));
