@@ -66,21 +66,51 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
   const { user } = useStore();
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>("financeiro");
+  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionUser, setSessionUser] = useState<{ id: string; email?: string } | null>(null);
 
   useEffect(() => {
-    if (!user?.isAuthenticated) {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      const u = data.session?.user;
+      setSessionUser(u ? { id: u.id, email: u.email ?? undefined } : null);
+      setSessionReady(true);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_e, session) => {
+      const u = session?.user;
+      setSessionUser(u ? { id: u.id, email: u.email ?? undefined } : null);
+      setSessionReady(true);
+    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const isAuthed = user?.isAuthenticated || !!sessionUser;
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    if (!isAuthed) {
       navigate({ to: "/entrar" });
     }
-  }, [user?.isAuthenticated, navigate]);
+  }, [sessionReady, isAuthed, navigate]);
 
-  if (!user?.isAuthenticated) return null;
+  if (!sessionReady) {
+    return <main className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">Carregando sessão...</main>;
+  }
+
+  if (!isAuthed) return null;
 
   const title = role === "owner" ? "Painel do Proprietário" : "Painel do Inquilino";
 
   const items: { key: Section; label: string; icon: typeof Wallet }[] = [
     { key: "financeiro", label: "Financeiro", icon: Wallet },
     { key: "contratos", label: "Contratos Atuais", icon: FileText },
-    ...(role === "owner" ? [{ key: "imoveis" as Section, label: "Meus Imóveis", icon: Home }] : []),
+    { key: "imoveis", label: "Meus Imóveis", icon: Home },
     { key: "perfil", label: "Meu Perfil", icon: UserCircle },
   ];
 
@@ -88,7 +118,7 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
     <main className="mx-auto max-w-7xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">Olá, {user.name}.</p>
+        <p className="text-sm text-muted-foreground">Olá, {user.name || sessionUser?.email || "usuário"}.</p>
       </header>
 
       <div className="grid gap-6 md:grid-cols-[220px_1fr]">
@@ -117,7 +147,7 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
         <section>
           {section === "financeiro" && <Financeiro role={role} />}
           {section === "contratos" && <Contratos role={role} />}
-          {section === "imoveis" && role === "owner" && <MeusImoveis />}
+          {section === "imoveis" && <MeusImoveis />}
           {section === "perfil" && <Perfil />}
         </section>
       </div>
