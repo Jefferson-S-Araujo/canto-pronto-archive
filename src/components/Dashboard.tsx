@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useStore, type Property } from "@/lib/store";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@/lib/store";
 import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
+import {
+  createProperty,
+  deleteProperty as deletePropertyApi,
+  listMyProperties,
+  type PropertyRow,
+} from "@/lib/properties.api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -33,8 +40,20 @@ type Invoice = {
 
 const OWNER_INVOICES: Invoice[] = [
   { id: "r1", description: "Recebimento — Apto Barra (Maio)", amount: 2500, dueDate: "05/05/2026", status: "pago" },
-  { id: "r2", description: "Recebimento — Estúdio Rio Vermelho (Maio)", amount: 1800, dueDate: "05/05/2026", status: "pago" },
-  { id: "r3", description: "Recebimento — Apto Barra (Junho)", amount: 2500, dueDate: "05/06/2026", status: "pendente" },
+  {
+    id: "r2",
+    description: "Recebimento — Estúdio Rio Vermelho (Maio)",
+    amount: 1800,
+    dueDate: "05/05/2026",
+    status: "pago",
+  },
+  {
+    id: "r3",
+    description: "Recebimento — Apto Barra (Junho)",
+    amount: 2500,
+    dueDate: "05/06/2026",
+    status: "pendente",
+  },
 ];
 
 const TENANT_INVOICES: Invoice[] = [
@@ -61,9 +80,7 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
   const items: { key: Section; label: string; icon: typeof Wallet }[] = [
     { key: "financeiro", label: "Financeiro", icon: Wallet },
     { key: "contratos", label: "Contratos Atuais", icon: FileText },
-    ...(role === "owner"
-      ? [{ key: "imoveis" as Section, label: "Meus Imóveis", icon: Home }]
-      : []),
+    ...(role === "owner" ? [{ key: "imoveis" as Section, label: "Meus Imóveis", icon: Home }] : []),
     { key: "perfil", label: "Meu Perfil", icon: UserCircle },
   ];
 
@@ -109,8 +126,7 @@ export function Dashboard({ role }: { role: "tenant" | "owner" }) {
 }
 
 const BUCKET = "property-images";
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80";
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80";
 
 async function uploadImage(file: File): Promise<string> {
   const { data: userData, error: userErr } = await supabase.auth.getUser();
@@ -150,8 +166,12 @@ async function uploadWithFallback(file: File): Promise<string> {
 }
 
 function MeusImoveis() {
-  const { properties, user, addProperty, updateProperty, deleteProperty } = useStore();
-  const mine = properties.filter((p) => p.ownerId === user.id);
+  const queryClient = useQueryClient();
+  const { updateProperty } = useStore();
+  const { data: mine = [] } = useQuery({
+    queryKey: ["properties", "mine"],
+    queryFn: listMyProperties,
+  });
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [neighborhood, setNeighborhood] = useState<string>(SALVADOR_NEIGHBORHOODS[0]);
@@ -160,9 +180,10 @@ function MeusImoveis() {
   const [area, setArea] = useState("50");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [description, setDescription] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-  const [editing, setEditing] = useState<Property | null>(null);
+  const [editing, setEditing] = useState<PropertyRow | null>(null);
 
   const onPickFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -187,28 +208,46 @@ function MeusImoveis() {
     setImages((arr) => arr.filter((_, i) => i !== idx));
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const priceN = Number(price);
     if (!title.trim() || !priceN || !neighborhood) {
       return toast.error("Preencha título, valor e bairro.");
     }
-    addProperty({
-      title: title.trim(),
-      address: `${neighborhood}, Salvador/BA`,
-      neighborhood,
-      price: priceN,
-      deposit: priceN,
-      area: Number(area) || 50,
-      bedrooms: Number(bedrooms) || 1,
-      bathrooms: Number(bathrooms) || 1,
-      image: images[0] || FALLBACK_IMG,
-      images,
-      amenities: [],
-      description: description.trim() || "Imóvel em Salvador/BA.",
-    });
-    setTitle(""); setPrice(""); setImages([]); setDescription("");
-    toast.success(`Imóvel publicado em ${neighborhood}!`);
+    setSubmitting(true);
+    try {
+      await createProperty({
+        title: title.trim(),
+        address: `${neighborhood}, Salvador/BA`,
+        neighborhood,
+        price: priceN,
+        deposit: priceN,
+        area: Number(area) || 50,
+        bedrooms: Number(bedrooms) || 1,
+        bathrooms: Number(bathrooms) || 1,
+        image: images[0] || FALLBACK_IMG,
+        images,
+        amenities: [],
+        description: description.trim() || "Imóvel em Salvador/BA.",
+        status: "published",
+        certification: "pendente",
+        score: 0,
+      });
+      setTitle("");
+      setPrice("");
+      setNeighborhood(SALVADOR_NEIGHBORHOODS[0]);
+      setBedrooms("2");
+      setBathrooms("1");
+      setArea("50");
+      setImages([]);
+      setDescription("");
+      await queryClient.invalidateQueries({ queryKey: ["properties", "mine"] });
+      toast.success(`Imóvel publicado em ${neighborhood}!`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao publicar imóvel.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -221,40 +260,76 @@ function MeusImoveis() {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm sm:col-span-2">
             <span className="mb-1 block font-medium">Título do Imóvel</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Apto 2 quartos em Pituba"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex.: Apto 2 quartos em Pituba"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">Valor do Aluguel (R$)</span>
-            <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+            <input
+              type="number"
+              min={0}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="2500"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">Bairro (Salvador/BA)</span>
-            <select value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm">
-              {SALVADOR_NEIGHBORHOODS.map((n) => <option key={n} value={n}>{n}</option>)}
+            <select
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            >
+              {SALVADOR_NEIGHBORHOODS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
             </select>
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">Quartos</span>
-            <input type="number" min={0} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+            <input
+              type="number"
+              min={0}
+              value={bedrooms}
+              onChange={(e) => setBedrooms(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">Banheiros</span>
-            <input type="number" min={0} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+            <input
+              type="number"
+              min={0}
+              value={bathrooms}
+              onChange={(e) => setBathrooms(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">Área (m²)</span>
-            <input type="number" min={0} value={area} onChange={(e) => setArea(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+            <input
+              type="number"
+              min={0}
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
           </label>
           <label className="block text-sm sm:col-span-2">
             <span className="mb-1 block font-medium">Descrição (opcional)</span>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
           </label>
         </div>
 
@@ -293,12 +368,17 @@ function MeusImoveis() {
             className="hidden"
             onChange={(e) => onPickFiles(e.target.files)}
           />
-          <p className="text-xs text-muted-foreground">As fotos ficam públicas no Supabase Storage (bucket “{BUCKET}”).</p>
+          <p className="text-xs text-muted-foreground">
+            As fotos ficam públicas no Supabase Storage (bucket “{BUCKET}”).
+          </p>
         </div>
 
-        <button type="submit"
-          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
-          Publicar Imóvel
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          {submitting ? "Publicando…" : "Publicar Imóvel"}
         </button>
       </form>
 
@@ -316,7 +396,7 @@ function MeusImoveis() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{p.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {p.neighborhood} · {p.bedrooms}q · {p.area}m² · {(p.images?.length ?? 0)} foto(s)
+                    {p.neighborhood} · {p.bedrooms}q · {p.area}m² · {p.images?.length ?? 0} foto(s)
                   </p>
                 </div>
                 <span className="text-sm font-semibold">R$ {p.price.toLocaleString("pt-BR")}</span>
@@ -327,10 +407,14 @@ function MeusImoveis() {
                   <Pencil className="h-3.5 w-3.5" /> Editar fotos
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm("Excluir este imóvel?")) {
-                      deleteProperty(p.id);
+                  onClick={async () => {
+                    if (!confirm("Excluir este imóvel?")) return;
+                    try {
+                      await deletePropertyApi(p.id);
+                      await queryClient.invalidateQueries({ queryKey: ["properties", "mine"] });
                       toast.success("Imóvel excluído.");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Falha ao excluir imóvel.");
                     }
                   }}
                   className="inline-flex items-center justify-center rounded-md border px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10"
@@ -367,12 +451,12 @@ function EditPhotosModal({
   onClose,
   onSave,
 }: {
-  property: Property;
+  property: Pick<PropertyRow, "id" | "title" | "image" | "images">;
   onClose: () => void;
   onSave: (images: string[]) => void;
 }) {
   const [imgs, setImgs] = useState<string[]>(
-    property.images?.length ? property.images : property.image ? [property.image] : []
+    property.images?.length ? property.images : property.image ? [property.image] : [],
   );
   const [uploading, setUploading] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
@@ -594,7 +678,9 @@ function Perfil() {
     if (!cur || !nw || !conf) return alert("Preencha todos os campos.");
     if (nw !== conf) return alert("Nova senha e confirmação não conferem.");
     if (nw.length < 6) return alert("A nova senha deve ter ao menos 6 caracteres.");
-    setCur(""); setNw(""); setConf("");
+    setCur("");
+    setNw("");
+    setConf("");
     alert("Senha alterada com sucesso!");
   };
 
@@ -620,7 +706,9 @@ function Perfil() {
           <div>
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.email ?? "—"}</p>
-            <p className="text-xs text-muted-foreground mt-1">Perfil: {user.role === "owner" ? "Proprietário" : user.role === "tenant" ? "Inquilino" : "Admin"}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Perfil: {user.role === "owner" ? "Proprietário" : user.role === "tenant" ? "Inquilino" : "Admin"}
+            </p>
           </div>
           <input ref={fileRef} onChange={onPick} type="file" accept="image/*" className="hidden" />
         </div>
@@ -633,17 +721,35 @@ function Perfil() {
         </div>
         <label className="block text-sm">
           <span className="mb-1 block font-medium">Senha atual</span>
-          <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          <input
+            type="password"
+            value={cur}
+            onChange={(e) => setCur(e.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block font-medium">Nova senha</span>
-          <input type="password" value={nw} onChange={(e) => setNw(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          <input
+            type="password"
+            value={nw}
+            onChange={(e) => setNw(e.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block font-medium">Confirmar nova senha</span>
-          <input type="password" value={conf} onChange={(e) => setConf(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          <input
+            type="password"
+            value={conf}
+            onChange={(e) => setConf(e.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
         </label>
-        <button type="submit" className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
+        <button
+          type="submit"
+          className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
           Salvar
         </button>
       </form>
