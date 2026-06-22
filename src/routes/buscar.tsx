@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { listPublishedProperties } from "@/lib/properties.api";
 import { SALVADOR_NEIGHBORHOODS } from "@/lib/neighborhoods";
 
 export const Route = createFileRoute("/buscar")({
@@ -13,8 +14,10 @@ export const Route = createFileRoute("/buscar")({
 const NEIGHBORHOODS = ["Todos", ...SALVADOR_NEIGHBORHOODS];
 
 function Buscar() {
-  const { properties } = useStore();
-  const isLoading = false;
+  const { data: properties = [], isLoading } = useQuery({
+    queryKey: ["properties", "published"],
+    queryFn: listPublishedProperties,
+  });
   const [q, setQ] = useState("");
   const [bairro, setBairro] = useState("Todos");
   const [maxPrice, setMaxPrice] = useState(5000);
@@ -26,7 +29,7 @@ function Buscar() {
   const list = useMemo(
     () =>
       properties.filter((p) => {
-        if (q && !(`${p.title} ${p.neighborhood} ${p.address}`.toLowerCase().includes(q.toLowerCase()))) return false;
+        if (q && !`${p.title} ${p.neighborhood} ${p.address}`.toLowerCase().includes(q.toLowerCase())) return false;
         if (bairro !== "Todos" && p.neighborhood !== bairro) return false;
         if (Number(p.price) > maxPrice) return false;
         if (p.bedrooms < minBeds) return false;
@@ -77,23 +80,50 @@ function Buscar() {
         <div className="mt-4 grid gap-4 rounded-xl border bg-card p-5 md:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs font-medium">
             Preço máximo: <span className="font-bold text-primary">R$ {maxPrice.toLocaleString("pt-BR")}</span>
-            <input type="range" min={1000} max={10000} step={100} value={maxPrice} onChange={(e) => setMaxPrice(+e.target.value)} />
+            <input
+              type="range"
+              min={1000}
+              max={10000}
+              step={100}
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(+e.target.value)}
+            />
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Quartos mínimos
-            <select className="rounded-md border bg-background px-2 py-1.5" value={minBeds} onChange={(e) => setMinBeds(+e.target.value)}>
-              {[0, 1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}+</option>)}
+            <select
+              className="rounded-md border bg-background px-2 py-1.5"
+              value={minBeds}
+              onChange={(e) => setMinBeds(+e.target.value)}
+            >
+              {[0, 1, 2, 3, 4].map((n) => (
+                <option key={n} value={n}>
+                  {n}+
+                </option>
+              ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Banheiros mínimos
-            <select className="rounded-md border bg-background px-2 py-1.5" value={minBaths} onChange={(e) => setMinBaths(+e.target.value)}>
-              {[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n}+</option>)}
+            <select
+              className="rounded-md border bg-background px-2 py-1.5"
+              value={minBaths}
+              onChange={(e) => setMinBaths(+e.target.value)}
+            >
+              {[0, 1, 2, 3].map((n) => (
+                <option key={n} value={n}>
+                  {n}+
+                </option>
+              ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Certificação
-            <select className="rounded-md border bg-background px-2 py-1.5" value={cert} onChange={(e) => setCert(e.target.value as "Todos" | "Parede Seca")}>
+            <select
+              className="rounded-md border bg-background px-2 py-1.5"
+              value={cert}
+              onChange={(e) => setCert(e.target.value as "Todos" | "Parede Seca")}
+            >
               <option>Todos</option>
               <option>Parede Seca</option>
             </select>
@@ -105,7 +135,9 @@ function Buscar() {
         {isLoading ? "Carregando..." : `${list.length} imóvel(eis) encontrado(s)`}
       </p>
       <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {list.map((p) => <PropertyCard key={p.id} p={p} />)}
+        {list.map((p) => (
+          <PropertyCard key={p.id} p={p} />
+        ))}
       </div>
       {!isLoading && list.length === 0 && (
         <div className="mt-10 rounded-xl border bg-card p-10 text-center text-muted-foreground">
